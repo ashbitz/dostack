@@ -118,8 +118,7 @@ article {
   display: flex;
   align-items: center;
   gap: 16px;
-  flex-wrap: wrap;
-  
+  flex-wrap: wrap; 
 }
 
 .titulo {
@@ -145,15 +144,31 @@ article {
 }
 
 .alta {
-  background-color: #ef4444;
+   background: #fee2e2;
+  color: #dc2626;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .media {
-  background-color: #f59e0b;
+  background: #fef3c7;
+  color: #d97706;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .baja {
-  background-color: #22c55e;
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+
 }
 
 @media (max-width: 768px) {
