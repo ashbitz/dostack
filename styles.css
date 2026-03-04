@@ -118,6 +118,13 @@ article {
 
   aside {
     width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  section {
+    width: 100%;
+    box-sizing: border-box;
   }
 
 }
