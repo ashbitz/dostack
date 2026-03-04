@@ -11,6 +11,8 @@
   --radius: 12px;
 }
 
+* { box-sizing: border-box; }
+
 .logo-icon {
   width: 36px;
   height: 36px;
@@ -149,44 +151,28 @@ article {
 
 @media (max-width: 768px) {
 
-  main {
+  main{
     flex-direction: column;
-    padding: 12px;
+    padding: 0;
+    gap: 12px;
   }
 
-header {
-  margin: 12px;
-  padding-left: 20px;
-}
-
-  aside {
-    width: 100%;
+  header, aside, section{
     margin: 12px;
   }
 
-section {
-  margin: 12px;
-}
+  aside{
+    width: auto;
+  }
 
-  aside ul {
+  header{
+    padding-left: 20px;
+  }
+
+  aside ul{
     display: flex;
-    gap: 20px;
-    justify-content: space-around;
+    gap: 12px;
+    justify-content: center;
     flex-wrap: wrap;
   }
-
-  aside li {
-    margin-bottom: 0;
-    text-align: center;
-  }
-
-aside a {
-  text-decoration: none;
-  color: var(--color-text);
-  background-color: rgba(255,255,255,0.2);
-  padding: 8px 12px;
-  border-radius: 6px;
-  display: block;
-}
-
 }
