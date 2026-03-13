@@ -468,7 +468,7 @@ function createTaskElement(task) {
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
   checkbox.checked = task.completed;
-  checkbox.className = "h-4 w-4 accent-slate-600";
+  checkbox.className = "h-4 w-4 shrink-0 accent-slate-600";
   checkbox.setAttribute("aria-label", `Marcar tarea ${task.title} como completada`);
 
   const title = document.createElement("span");
@@ -479,7 +479,7 @@ function createTaskElement(task) {
 
   const badge = document.createElement("span");
   badge.className =
-    "rounded-full px-2 py-1 text-xs font-semibold " +
+    "inline-flex w-fit shrink-0 items-center rounded-full px-2 py-1 text-xs font-semibold md:col-start-5 md:justify-self-start " +
     getPriorityClasses(task.priority);
   badge.textContent =
     task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
@@ -488,7 +488,7 @@ function createTaskElement(task) {
   deleteBtn.type = "button";
   deleteBtn.textContent = "\u00D7";
   deleteBtn.className =
-    "ml-2 cursor-pointer border-0 bg-transparent text-lg font-bold text-gray-400 transition-colors hover:text-red-500";
+    "ml-2 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent text-3xl leading-none text-gray-400 transition-colors hover:text-red-500 md:col-start-6 md:ml-0 md:justify-self-end";
   deleteBtn.setAttribute("aria-label", `Eliminar tarea ${task.title}`);
 
   article.append(checkbox, title, category, badge, deleteBtn);
@@ -519,7 +519,13 @@ function updateTaskStyle(task, elements) {
     "shadow-sm",
     "transition-transform",
     "hover:-translate-y-[2px]",
-    "hover:shadow-lg"
+    "hover:shadow-lg",
+    "md:grid",
+    "md:grid-cols-[auto_20ch_10ch_1fr_6rem_2.5rem]",
+    "md:items-center",
+    "md:justify-normal",
+    "md:gap-x-4",
+    "md:gap-y-0"
   ];
 
   const completedArticleClasses = [
@@ -540,13 +546,13 @@ function updateTaskStyle(task, elements) {
   ].join(" ");
 
   const completedTitleClasses =
-    "font-medium text-slate-500 dark:text-slate-400 line-through";
+    "min-w-0 text-left text-[1.05rem] font-semibold text-slate-500 dark:text-slate-400 line-through md:w-full md:pl-20";
   const activeTitleClasses =
-    "font-medium text-slate-900 dark:text-slate-100";
+    "min-w-0 text-left text-[1.05rem] font-semibold text-slate-900 dark:text-slate-100 md:w-full md:pl-20";
   const completedCategoryClasses =
-    "text-sm text-slate-400 dark:text-slate-500 line-through";
+    "min-w-0 text-left text-sm italic text-slate-400 dark:text-slate-500 line-through md:w-full md:pl-45";
   const activeCategoryClasses =
-    "text-sm text-slate-500 dark:text-slate-300";
+    "min-w-0 text-left text-sm italic text-slate-500 dark:text-slate-300 md:w-full md:pl-45";
 
   if (task.completed) {
     article.className = completedArticleClasses;
