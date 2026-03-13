@@ -99,6 +99,7 @@
         <h2 class="sr-only">Gestor de tareas</h2>
         <form
           id="task-form"
+          novalidate
           class="flex flex-wrap gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-lg dark:border-slate-700 dark:bg-slate-900/60"
         >
           <label class="sr-only" for="task-input">Nombre de la tarea</label>
@@ -140,6 +141,12 @@
           >
             A&#241;adir
           </button>
+
+          <p
+            id="task-form-error"
+            class="hidden w-full text-sm font-medium text-red-600 dark:text-red-400"
+            aria-live="assertive"
+          ></p>
         </form>
 
         <div

@@ -11,6 +11,7 @@ const form = document.querySelector("#task-form");
 const taskInput = document.querySelector("#task-input");
 const categoryInput = document.querySelector("#category-input");
 const priorityInput = document.querySelector("#priority-input");
+const taskFormError = document.querySelector("#task-form-error");
 const taskList = document.querySelector("#task-list");
 const themeToggle = document.querySelector("#theme-toggle");
 const navHome = document.querySelector("#nav-home");
@@ -207,6 +208,88 @@ function getPriorityClasses(priority) {
   return "bg-green-100 text-green-700";
 }
 
+function showTaskFormError(message) {
+  if (!taskFormError) {
+    return;
+  }
+
+  taskFormError.textContent = message;
+  taskFormError.classList.remove("hidden");
+}
+
+function clearTaskFormError() {
+  if (!taskFormError) {
+    return;
+  }
+
+  taskFormError.textContent = "";
+  taskFormError.classList.add("hidden");
+}
+
+function validateTaskInput(title, category) {
+  const normalizedTitle = title.trim();
+  const normalizedCategory = category.trim();
+
+  if (!normalizedTitle) {
+    return {
+      isValid: false,
+      error: "El titulo es obligatorio."
+    };
+  }
+
+  if (normalizedTitle.length < 3) {
+    return {
+      isValid: false,
+      error: "El titulo debe tener al menos 3 caracteres."
+    };
+  }
+
+  if (normalizedTitle.length > 60) {
+    return {
+      isValid: false,
+      error: "El titulo no puede superar los 60 caracteres."
+    };
+  }
+
+  if (!normalizedCategory) {
+    return {
+      isValid: false,
+      error: "La categoria es obligatoria."
+    };
+  }
+
+  if (normalizedCategory.length < 2) {
+    return {
+      isValid: false,
+      error: "La categoria debe tener al menos 2 caracteres."
+    };
+  }
+
+  if (normalizedCategory.length > 30) {
+    return {
+      isValid: false,
+      error: "La categoria no puede superar los 30 caracteres."
+    };
+  }
+
+  const hasDuplicateTitle = tasks.some(
+    (task) => task.title.toLowerCase() === normalizedTitle.toLowerCase()
+  );
+
+  if (hasDuplicateTitle) {
+    return {
+      isValid: false,
+      error: "Ya existe una tarea con ese titulo."
+    };
+  }
+
+  return {
+    isValid: true,
+    title: normalizedTitle,
+    category: normalizedCategory
+  };
+}
+
 function createTaskElement(task) {
   const article = document.createElement("article");
   article.setAttribute("role", "listitem");
@@ -378,19 +461,30 @@ if (navClosedTasks) {
 
 setActiveNav(navHome);
 
+taskInput.addEventListener("input", clearTaskFormError);
+categoryInput.addEventListener("input", clearTaskFormError);
+
 form.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const title = taskInput.value.trim();
-  const category = categoryInput.value.trim();
+  const title = taskInput.value;
+  const category = categoryInput.value;
   const priority = priorityInput.value;
+  const validation = validateTaskInput(title, category);
 
-  if (!title || !category) return;
+  if (!validation.isValid) {
+    showTaskFormError(validation.error);
+    return;
+  }
+
+  clearTaskFormError();
+  taskInput.value = validation.title;
+  categoryInput.value = validation.category;
 
   const newTask = normalizeTask({
     id: createTaskId(),
-    title,
-    category,
+    title: validation.title,
+    category: validation.category,
     priority,
     completed: false
   });
