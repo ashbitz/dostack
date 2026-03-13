@@ -22,6 +22,12 @@ const asideLinks = document.querySelectorAll(".aside-link");
 let tasks = [];
 let currentFilter = "all";
 const taskElements = new WeakMap();
+let draggedTaskId = null;
+const dragIndicator = document.createElement("div");
+
+dragIndicator.className = "mx-3 my-1 h-0 border-t-2 border-indigo-500";
+dragIndicator.setAttribute("aria-hidden", "true");
+dragIndicator.style.pointerEvents = "none";
 
 function getStorageItem(key) {
   try {
@@ -213,6 +219,137 @@ function applyFilter() {
 
     elements.article.style.display = visible ? "" : "none";
   });
+
+  updateTaskDraggability();
+}
+
+function updateTaskDraggability() {
+  const canReorderTasks = currentFilter === "all";
+
+  tasks.forEach((task) => {
+    const elements = taskElements.get(task);
+    if (!elements) return;
+
+    elements.article.draggable = canReorderTasks;
+    elements.article.style.cursor = canReorderTasks ? "grab" : "";
+
+    if (!canReorderTasks) {
+      elements.article.setAttribute("aria-grabbed", "false");
+      elements.article.style.opacity = "";
+      clearDragIndicator();
+      draggedTaskId = null;
+    }
+  });
+}
+
+function clearDragIndicator() {
+  if (dragIndicator.parentNode) {
+    dragIndicator.parentNode.removeChild(dragIndicator);
+  }
+}
+
+function getTaskById(taskId) {
+  return tasks.find((task) => task.id === taskId) ?? null;
+}
+
+function getDragAfterElement(pointerY) {
+  const draggableArticles = [...taskList.querySelectorAll("[data-task-id]")].filter(
+    (article) => article.dataset.taskId !== draggedTaskId && article.style.display !== "none"
+  );
+
+  const closest = draggableArticles.reduce(
+    (result, article) => {
+      const box = article.getBoundingClientRect();
+      const offset = pointerY - box.top - box.height / 2;
+
+      if (offset < 0 && offset > result.offset) {
+        return { offset, element: article };
+      }
+
+      return result;
+    },
+    { offset: Number.NEGATIVE_INFINITY, element: null }
+  );
+
+  return closest.element;
+}
+
+function placeDragIndicator(afterElement) {
+  if (!dragIndicator.parentNode) {
+    taskList.append(dragIndicator);
+  }
+
+  if (!afterElement) {
+    taskList.append(dragIndicator);
+    return;
+  }
+
+  taskList.insertBefore(dragIndicator, afterElement);
+}
+
+function syncTaskOrderWithDOM() {
+  const orderedTaskIds = [...taskList.querySelectorAll("[data-task-id]")]
+    .map((article) => article.dataset.taskId)
+    .filter(Boolean);
+
+  const taskById = new Map(tasks.map((task) => [task.id, task]));
+  tasks = orderedTaskIds
+    .reverse()
+    .map((taskId) => taskById.get(taskId))
+    .filter((task) => task !== undefined);
+
+  saveTasks();
+}
+
+function finalizeDraggedTaskPosition() {
+  if (!draggedTaskId) {
+    clearDragIndicator();
+    return;
+  }
+
+  const draggedTask = getTaskById(draggedTaskId);
+  const draggedElements = draggedTask ? taskElements.get(draggedTask) : null;
+
+  if (!draggedElements) {
+    clearDragIndicator();
+    return;
+  }
+
+  if (dragIndicator.parentNode) {
+    taskList.insertBefore(draggedElements.article, dragIndicator);
+  }
+
+  clearDragIndicator();
+  syncTaskOrderWithDOM();
+}
+
+function attachTaskListDragAndDropHandlers() {
+  taskList.addEventListener("dragover", (event) => {
+    if (currentFilter !== "all" || !draggedTaskId) {
+      return;
+    }
+
+    event.preventDefault();
+
+    const draggedTask = getTaskById(draggedTaskId);
+    const draggedElements = draggedTask ? taskElements.get(draggedTask) : null;
+
+    if (!draggedElements) {
+      return;
+    }
+
+    const afterElement = getDragAfterElement(event.clientY);
+    placeDragIndicator(afterElement);
+  });
+
+  taskList.addEventListener("drop", (event) => {
+    if (currentFilter !== "all" || !draggedTaskId) {
+      return;
+    }
+
+    event.preventDefault();
+    finalizeDraggedTaskPosition();
+  });
 }
 
 function getPriorityClasses(priority) {
@@ -323,6 +460,10 @@ function validateTaskInput(title, category) {
 function createTaskElement(task) {
   const article = document.createElement("article");
   article.setAttribute("role", "listitem");
+  article.setAttribute("aria-grabbed", "false");
+  article.dataset.taskId = task.id;
+  article.draggable = currentFilter === "all";
+  article.style.cursor = currentFilter === "all" ? "grab" : "";
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -428,6 +569,34 @@ function updateTaskStyle(task, elements) {
 function attachTaskEventHandlers(task, elements) {
   const { article, checkbox, deleteBtn } = elements;
 
+  article.addEventListener("dragstart", (event) => {
+    if (currentFilter !== "all") {
+      event.preventDefault();
+      return;
+    }
+
+    draggedTaskId = task.id;
+    article.setAttribute("aria-grabbed", "true");
+    article.style.opacity = "0.6";
+    article.style.cursor = "grabbing";
+
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", task.id);
+    }
+  });
+
+  article.addEventListener("dragend", () => {
+    article.setAttribute("aria-grabbed", "false");
+    article.style.opacity = "";
+    article.style.cursor = currentFilter === "all" ? "grab" : "";
+
+    if (draggedTaskId === task.id) {
+      finalizeDraggedTaskPosition();
+      draggedTaskId = null;
+    }
+  });
+
   checkbox.addEventListener("change", () => {
     task.completed = checkbox.checked;
     updateTaskStyle(task, elements);
@@ -468,6 +637,8 @@ function renderStoredTasks() {
   tasks.forEach((task) => addTaskToDOM(task, { applyCurrentFilter: false }));
   applyFilter();
 }
+
+attachTaskListDragAndDropHandlers();
 
 const savedTheme = getStorageItem(STORAGE_KEYS.theme);
 const isDarkTheme = savedTheme === "dark";
