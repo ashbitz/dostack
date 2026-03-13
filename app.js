@@ -111,6 +111,13 @@ function shouldPersistNormalizedTasks(parsedTasks, normalizedTasks) {
   });
 }
 
+/**
+ * Serializa la lista actual de tareas y la guarda en `localStorage`.
+ *
+ * @param {{ notifyOnError?: boolean }} [options={}] Opciones de guardado.
+ * @param {boolean} [options.notifyOnError=true] Indica si se debe mostrar una alerta cuando falle el guardado.
+ * @returns {void}
+ */
 function saveTasks({ notifyOnError = true } = {}) {
   try {
     const serializedTasks = JSON.stringify(tasks);
@@ -129,6 +136,11 @@ function saveTasks({ notifyOnError = true } = {}) {
   }
 }
 
+/**
+ * Recupera las tareas guardadas desde `localStorage`, las normaliza y elimina datos invalidos si es necesario.
+ *
+ * @returns {{ id: string, title: string, category: string, priority: string, completed: boolean }[]} Lista de tareas restauradas.
+ */
 function loadTasks() {
   const savedTasks = getStorageItem(STORAGE_KEYS.tasks);
 
@@ -182,6 +194,11 @@ function setActiveNav(link) {
   link.setAttribute("aria-pressed", "true");
 }
 
+/**
+ * Aplica el filtro de visibilidad actual a las tareas renderizadas en el DOM.
+ *
+ * @returns {void}
+ */
 function applyFilter() {
   tasks.forEach((task) => {
     const elements = taskElements.get(task);
@@ -226,6 +243,13 @@ function clearTaskFormError() {
   taskFormError.classList.add("hidden");
 }
 
+/**
+ * Valida y normaliza los valores introducidos para crear una nueva tarea.
+ *
+ * @param {string} title Titulo introducido por la persona usuaria.
+ * @param {string} category Categoria introducida por la persona usuaria.
+ * @returns {{ isValid: false, error: string } | { isValid: true, title: string, category: string }} Resultado de la validacion.
+ */
 function validateTaskInput(title, category) {
   const normalizedTitle = title.trim();
   const normalizedCategory = category.trim();
@@ -290,6 +314,12 @@ function validateTaskInput(title, category) {
   };
 }
 
+/**
+ * Crea los elementos del DOM necesarios para representar una tarea.
+ *
+ * @param {{ id: string, title: string, category: string, priority: string, completed: boolean }} task Tarea a representar.
+ * @returns {{ article: HTMLElement, checkbox: HTMLInputElement, title: HTMLSpanElement, category: HTMLSpanElement, badge: HTMLSpanElement, deleteBtn: HTMLButtonElement }} Elementos creados para la tarea.
+ */
 function createTaskElement(task) {
   const article = document.createElement("article");
   article.setAttribute("role", "listitem");
@@ -325,6 +355,13 @@ function createTaskElement(task) {
   return { article, checkbox, title, category, badge, deleteBtn };
 }
 
+/**
+ * Actualiza las clases CSS de una tarea segun su estado de completado.
+ *
+ * @param {{ completed: boolean }} task Tarea cuyo estado visual se debe reflejar.
+ * @param {{ article: HTMLElement, title: HTMLElement, category: HTMLElement }} elements Elementos del DOM asociados a la tarea.
+ * @returns {void}
+ */
 function updateTaskStyle(task, elements) {
   const { article, title, category } = elements;
 
@@ -381,6 +418,13 @@ function updateTaskStyle(task, elements) {
   }
 }
 
+/**
+ * Registra los eventos necesarios para completar o eliminar una tarea desde la interfaz.
+ *
+ * @param {{ id: string, completed: boolean }} task Tarea asociada a los eventos.
+ * @param {{ article: HTMLElement, checkbox: HTMLInputElement, deleteBtn: HTMLButtonElement }} elements Elementos interactivos de la tarea.
+ * @returns {void}
+ */
 function attachTaskEventHandlers(task, elements) {
   const { article, checkbox, deleteBtn } = elements;
 
@@ -399,6 +443,14 @@ function attachTaskEventHandlers(task, elements) {
   });
 }
 
+/**
+ * Crea, configura e inserta una tarea en la lista visible del documento.
+ *
+ * @param {{ id: string, title: string, category: string, priority: string, completed: boolean }} task Tarea que se va a renderizar.
+ * @param {{ applyCurrentFilter?: boolean }} [options={}] Opciones de renderizado.
+ * @param {boolean} [options.applyCurrentFilter=true] Indica si se debe reaplicar el filtro actual tras insertar la tarea.
+ * @returns {void}
+ */
 function addTaskToDOM(task, { applyCurrentFilter = true } = {}) {
   const elements = createTaskElement(task);
 
