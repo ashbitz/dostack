@@ -1,3 +1,12 @@
+const STORAGE_KEYS = {
+  theme: "theme",
+  tasks: "tasks"
+};
+
+const VALID_PRIORITIES = new Set(["alta", "media", "baja"]);
+const MOON_ICON = "\u{1F311}";
+const SUN_ICON = "\u2600\uFE0F";
+
 const form = document.querySelector("#task-form");
 const taskInput = document.querySelector("#task-input");
 const categoryInput = document.querySelector("#category-input");
@@ -9,12 +18,147 @@ const navOpenTasks = document.querySelector("#nav-open-tasks");
 const navClosedTasks = document.querySelector("#nav-closed-tasks");
 const asideLinks = document.querySelectorAll(".aside-link");
 
-const MOON_ICON = "\u{1F311}";
-const SUN_ICON = "\u2600\uFE0F";
-
 let tasks = [];
-const taskElements = new WeakMap();
 let currentFilter = "all";
+const taskElements = new WeakMap();
+
+function getStorageItem(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.error(`No se pudo leer "${key}" desde localStorage:`, error);
+    return null;
+  }
+}
+
+function setStorageItem(key, value) {
+  try {
+    localStorage.setItem(key, value);
+    return true;
+  } catch (error) {
+    console.error(`No se pudo guardar "${key}" en localStorage:`, error);
+    return false;
+  }
+}
+
+function removeStorageItem(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.error(`No se pudo eliminar "${key}" de localStorage:`, error);
+  }
+}
+
+function createTaskId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
+  }
+
+  return `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeTask(rawTask) {
+  if (!rawTask || typeof rawTask !== "object") {
+    return null;
+  }
+
+  const title = typeof rawTask.title === "string" ? rawTask.title.trim() : "";
+  const category =
+    typeof rawTask.category === "string" ? rawTask.category.trim() : "";
+  const rawPriority =
+    typeof rawTask.priority === "string" ? rawTask.priority.toLowerCase() : "";
+
+  if (!title || !category) {
+    return null;
+  }
+
+  return {
+    id:
+      typeof rawTask.id === "string" && rawTask.id.trim()
+        ? rawTask.id
+        : createTaskId(),
+    title,
+    category,
+    priority: VALID_PRIORITIES.has(rawPriority) ? rawPriority : "alta",
+    completed: Boolean(rawTask.completed)
+  };
+}
+
+function shouldPersistNormalizedTasks(parsedTasks, normalizedTasks) {
+  if (parsedTasks.length !== normalizedTasks.length) {
+    return true;
+  }
+
+  return parsedTasks.some((rawTask, index) => {
+    const normalizedTask = normalizedTasks[index];
+    const rawId =
+      rawTask && typeof rawTask === "object" && typeof rawTask.id === "string"
+        ? rawTask.id
+        : "";
+    const rawPriority =
+      rawTask && typeof rawTask === "object" && typeof rawTask.priority === "string"
+        ? rawTask.priority.toLowerCase()
+        : "";
+
+    return (
+      rawId !== normalizedTask.id ||
+      rawPriority !== normalizedTask.priority ||
+      Boolean(rawTask?.completed) !== normalizedTask.completed ||
+      rawTask?.title !== normalizedTask.title ||
+      rawTask?.category !== normalizedTask.category
+    );
+  });
+}
+
+function saveTasks({ notifyOnError = true } = {}) {
+  try {
+    const serializedTasks = JSON.stringify(tasks);
+    const saved = setStorageItem(STORAGE_KEYS.tasks, serializedTasks);
+
+    if (!saved && notifyOnError) {
+      alert(
+        "No se pudo guardar la tarea. Puede que el almacenamiento local este desactivado o lleno."
+      );
+    }
+  } catch (error) {
+    console.error("Error al serializar las tareas:", error);
+    if (notifyOnError) {
+      alert("No se pudo preparar la tarea para guardarla.");
+    }
+  }
+}
+
+function loadTasks() {
+  const savedTasks = getStorageItem(STORAGE_KEYS.tasks);
+
+  if (!savedTasks) {
+    return [];
+  }
+
+  try {
+    const parsedTasks = JSON.parse(savedTasks);
+
+    if (!Array.isArray(parsedTasks)) {
+      throw new Error("El contenido guardado no es una lista de tareas.");
+    }
+
+    const normalizedTasks = parsedTasks
+      .map(normalizeTask)
+      .filter((task) => task !== null);
+
+    if (shouldPersistNormalizedTasks(parsedTasks, normalizedTasks)) {
+      console.warn("Se normalizaron tareas guardadas al restaurar la sesion.");
+      tasks = normalizedTasks;
+      saveTasks({ notifyOnError: false });
+    }
+
+    return normalizedTasks;
+  } catch (error) {
+    console.error("No se pudieron recuperar las tareas guardadas:", error);
+    removeStorageItem(STORAGE_KEYS.tasks);
+    return [];
+  }
+}
 
 function updateThemeButton(isDark) {
   themeToggle.textContent = isDark ? SUN_ICON : MOON_ICON;
@@ -53,44 +197,6 @@ function applyFilter() {
   });
 }
 
-const savedTheme = localStorage.getItem("theme");
-const isDarkTheme = savedTheme === "dark";
-
-if (isDarkTheme) {
-  document.body.classList.add("dark");
-}
-
-updateThemeButton(isDarkTheme);
-
-themeToggle.addEventListener("click", () => {
-  const isDark = document.body.classList.toggle("dark");
-  localStorage.setItem("theme", isDark ? "dark" : "light");
-  updateThemeButton(isDark);
-});
-
-const savedTasks = localStorage.getItem("tasks");
-
-if (savedTasks) {
-  try {
-    tasks = JSON.parse(savedTasks);
-    tasks.forEach(addTaskToDOM);
-  } catch (error) {
-    console.error("No se pudieron recuperar las tareas guardadas:", error);
-    localStorage.removeItem("tasks");
-  }
-}
-
-function saveTasks() {
-  try {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  } catch (error) {
-    console.error("Error al guardar las tareas en localStorage:", error);
-    alert(
-      "No se pudo guardar la tarea. Puede que el almacenamiento local este desactivado o lleno."
-    );
-  }
-}
-
 function getPriorityClasses(priority) {
   if (priority === "alta") {
     return "bg-red-100 text-red-700";
@@ -104,8 +210,6 @@ function getPriorityClasses(priority) {
 function createTaskElement(task) {
   const article = document.createElement("article");
   article.setAttribute("role", "listitem");
-  article.className =
-    "flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm dark:border-slate-700 dark:bg-slate-800";
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -114,11 +218,9 @@ function createTaskElement(task) {
   checkbox.setAttribute("aria-label", `Marcar tarea ${task.title} como completada`);
 
   const title = document.createElement("span");
-  title.className = "font-medium text-slate-900 dark:text-slate-100";
   title.textContent = task.title;
 
   const category = document.createElement("span");
-  category.className = "text-sm text-slate-500 dark:text-slate-300";
   category.textContent = task.category;
 
   const badge = document.createElement("span");
@@ -208,21 +310,47 @@ function attachTaskEventHandlers(task, elements) {
 
   deleteBtn.addEventListener("click", () => {
     article.remove();
-    tasks = tasks.filter((t) => t !== task);
+    tasks = tasks.filter((storedTask) => storedTask.id !== task.id);
     saveTasks();
     applyFilter();
   });
 }
 
-function addTaskToDOM(task) {
+function addTaskToDOM(task, { applyCurrentFilter = true } = {}) {
   const elements = createTaskElement(task);
 
   updateTaskStyle(task, elements);
   taskElements.set(task, elements);
   attachTaskEventHandlers(task, elements);
   taskList.prepend(elements.article);
+
+  if (applyCurrentFilter) {
+    applyFilter();
+  }
+}
+
+function renderStoredTasks() {
+  tasks.forEach((task) => addTaskToDOM(task, { applyCurrentFilter: false }));
   applyFilter();
 }
+
+const savedTheme = getStorageItem(STORAGE_KEYS.theme);
+const isDarkTheme = savedTheme === "dark";
+
+if (isDarkTheme) {
+  document.body.classList.add("dark");
+}
+
+updateThemeButton(isDarkTheme);
+
+themeToggle.addEventListener("click", () => {
+  const isDark = document.body.classList.toggle("dark");
+  setStorageItem(STORAGE_KEYS.theme, isDark ? "dark" : "light");
+  updateThemeButton(isDark);
+});
+
+tasks = loadTasks();
+renderStoredTasks();
 
 if (navHome) {
   navHome.addEventListener("click", () => {
@@ -259,12 +387,17 @@ form.addEventListener("submit", (event) => {
 
   if (!title || !category) return;
 
-  const newTask = {
+  const newTask = normalizeTask({
+    id: createTaskId(),
     title,
     category,
     priority,
     completed: false
-  };
+  });
+
+  if (!newTask) {
+    return;
+  }
 
   tasks.push(newTask);
   saveTasks();
