@@ -18,6 +18,8 @@ const navHome = document.querySelector("#nav-home");
 const navOpenTasks = document.querySelector("#nav-open-tasks");
 const navClosedTasks = document.querySelector("#nav-closed-tasks");
 const asideLinks = document.querySelectorAll(".aside-link");
+const priorityPlaceholderClasses = ["text-slate-400", "dark:text-slate-500"];
+const priorityValueClasses = ["text-slate-900", "dark:text-slate-100"];
 
 let tasks = [];
 let currentFilter = "all";
@@ -387,9 +389,11 @@ function clearTaskFormError() {
  * @param {string} category Categoria introducida por la persona usuaria.
  * @returns {{ isValid: false, error: string } | { isValid: true, title: string, category: string }} Resultado de la validacion.
  */
-function validateTaskInput(title, category) {
+function validateTaskInput(title, category, priority) {
   const normalizedTitle = title.trim();
   const normalizedCategory = category.trim();
+  const normalizedPriority =
+    typeof priority === "string" ? priority.trim().toLowerCase() : "";
 
   if (!normalizedTitle) {
     return {
@@ -426,10 +430,17 @@ function validateTaskInput(title, category) {
     };
   }
 
-  if (normalizedCategory.length > 10) {
+  if (normalizedCategory.length > 20) {
     return {
       isValid: false,
-      error: "La categoria no puede superar los 10 caracteres."
+      error: "La categoria no puede superar los 20 caracteres."
+    };
+  }
+
+  if (!VALID_PRIORITIES.has(normalizedPriority)) {
+    return {
+      isValid: false,
+      error: "La prioridad es obligatoria."
     };
   }
 
@@ -447,8 +458,21 @@ function validateTaskInput(title, category) {
   return {
     isValid: true,
     title: normalizedTitle,
-    category: normalizedCategory
+    category: normalizedCategory,
+    priority: normalizedPriority
   };
+}
+
+function updatePriorityInputAppearance() {
+  const hasSelectedPriority = VALID_PRIORITIES.has(priorityInput.value);
+
+  priorityPlaceholderClasses.forEach((className) => {
+    priorityInput.classList.toggle(className, !hasSelectedPriority);
+  });
+
+  priorityValueClasses.forEach((className) => {
+    priorityInput.classList.toggle(className, hasSelectedPriority);
+  });
 }
 
 /**
@@ -692,6 +716,12 @@ setActiveNav(navHome);
 
 taskInput.addEventListener("input", clearTaskFormError);
 categoryInput.addEventListener("input", clearTaskFormError);
+priorityInput.addEventListener("change", () => {
+  clearTaskFormError();
+  updatePriorityInputAppearance();
+});
+
+updatePriorityInputAppearance();
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
@@ -699,7 +729,7 @@ form.addEventListener("submit", (event) => {
   const title = taskInput.value;
   const category = categoryInput.value;
   const priority = priorityInput.value;
-  const validation = validateTaskInput(title, category);
+  const validation = validateTaskInput(title, category, priority);
 
   if (!validation.isValid) {
     showTaskFormError(validation.error);
@@ -714,7 +744,7 @@ form.addEventListener("submit", (event) => {
     id: createTaskId(),
     title: validation.title,
     category: validation.category,
-    priority,
+    priority: validation.priority,
     completed: false
   });
 
@@ -728,6 +758,7 @@ form.addEventListener("submit", (event) => {
 
   taskInput.value = "";
   categoryInput.value = "";
-  priorityInput.value = "alta";
+  priorityInput.value = "";
+  updatePriorityInputAppearance();
   taskInput.focus();
 });

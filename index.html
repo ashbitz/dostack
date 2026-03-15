@@ -105,7 +105,7 @@
         >
           <label class="sr-only" for="task-input">Nombre de la tarea</label>
           <input
-            class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100"
+            class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             type="text"
             id="task-input"
             name="task"
@@ -116,7 +116,7 @@
 
           <label class="sr-only" for="category-input">Categoria</label>
           <input
-            class="min-w-[180px] flex-1 rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100"
+            class="min-w-[180px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             type="text"
             id="category-input"
             name="category"
@@ -129,8 +129,10 @@
           <select
             id="priority-input"
             name="priority"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 sm:w-36"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-gray-300 dark:bg-slate-800 dark:text-slate-500 sm:w-36"
+            required
           >
+            <option value="" selected disabled>Prioridad</option>
             <option value="alta">Alta</option>
             <option value="media">Media</option>
             <option value="baja">Baja</option>

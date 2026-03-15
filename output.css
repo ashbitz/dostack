@@ -542,6 +542,11 @@
     --tw-outline-style: none;
     outline-style: none;
   }
+  .placeholder\:text-slate-400 {
+    &::placeholder {
+      color: var(--color-slate-400);
+    }
+  }
   .hover\:-translate-y-\[2px\] {
     &:hover {
       @media (hover: hover) {
@@ -719,6 +724,11 @@
       padding-left: calc(var(--spacing) * 45);
     }
   }
+  .dark\:border-gray-300 {
+    &:where(.dark, .dark *) {
+      border-color: var(--color-gray-300);
+    }
+  }
   .dark\:border-slate-600 {
     &:where(.dark, .dark *) {
       border-color: var(--color-slate-600);
@@ -797,6 +807,13 @@
   .dark\:text-slate-500 {
     &:where(.dark, .dark *) {
       color: var(--color-slate-500);
+    }
+  }
+  .dark\:placeholder\:text-slate-500 {
+    &:where(.dark, .dark *) {
+      &::placeholder {
+        color: var(--color-slate-500);
+      }
     }
   }
   .dark\:hover\:bg-slate-700 {
