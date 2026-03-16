@@ -11,6 +11,8 @@ const FIELD_LIMITS = {
 };
 const MOON_ICON = "\u{1F311}";
 const SUN_ICON = "\u2600\uFE0F";
+const CHECK_ICON_DATA_URI =
+  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 10.5l3 3 7-7'/%3E%3C/svg%3E\")";
 
 const ACTIVE_NAV_CLASSES = ["bg-slate-100", "dark:bg-slate-700"];
 const PRIORITY_PLACEHOLDER_CLASSES = ["text-slate-400", "dark:text-slate-500"];
@@ -22,47 +24,56 @@ const PRIORITY_CLASS_NAMES = {
 };
 const TASK_CLASS_NAMES = {
   articleBase:
-    "mb-3 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 shadow-sm transition-transform hover:-translate-y-[2px] hover:shadow-lg md:grid md:grid-cols-[auto_20ch_10ch_1fr_6rem_5.5rem] md:items-center md:justify-normal md:gap-x-4 md:gap-y-0",
+    "mb-3 flex items-center gap-5 rounded-lg border px-4 py-5 shadow-sm transition-transform hover:-translate-y-[2px] hover:shadow-lg",
   article: {
     active: "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800",
     completed:
       "border-slate-200 bg-slate-100 opacity-70 dark:border-slate-600 dark:bg-slate-700"
   },
+  content:
+    "min-w-0 flex flex-1 flex-col gap-2 sm:ml-1 sm:grid sm:grid-cols-[minmax(0,20rem)_auto] sm:items-center sm:gap-x-5 sm:gap-y-0",
+  textGroup: "min-w-0",
   title: {
     active:
-      "min-w-0 text-left text-[1.05rem] font-semibold text-slate-900 dark:text-slate-100 md:w-full md:pl-20",
+      "block min-w-0 truncate text-left text-[1rem] font-semibold text-slate-900 dark:text-slate-100 sm:text-[1.12rem]",
     completed:
-      "min-w-0 text-left text-[1.05rem] font-semibold text-slate-500 line-through dark:text-slate-400 md:w-full md:pl-20"
+      "block min-w-0 truncate text-left text-[1rem] font-semibold text-slate-500 line-through dark:text-slate-400 sm:text-[1.12rem]"
   },
+  meta: "mt-2 flex items-center",
   category: {
     active:
-      "min-w-0 text-left text-sm italic text-slate-500 dark:text-slate-300 md:w-full md:pl-45",
+      "min-w-0 text-left text-sm italic text-slate-500 dark:text-slate-300",
     completed:
-      "min-w-0 text-left text-sm italic text-slate-400 line-through dark:text-slate-500 md:w-full md:pl-45"
+      "min-w-0 text-left text-sm italic text-slate-400 line-through dark:text-slate-500"
   },
-  checkbox: "h-4 w-4 shrink-0 accent-slate-600",
+  checkbox:
+    "h-7 w-7 shrink-0 cursor-pointer appearance-none rounded-full border-2 border-slate-400 bg-white bg-center bg-no-repeat bg-[length:0.85rem_0.85rem] transition checked:border-indigo-500 checked:bg-indigo-500 focus:outline-none focus:ring-0 focus:shadow-none dark:border-slate-500 dark:bg-slate-900",
   badge:
-    "inline-flex w-fit shrink-0 items-center rounded-full px-2 py-1 text-xs font-semibold md:col-start-5 md:justify-self-start",
+    "inline-flex w-fit shrink-0 self-start rounded-full px-3.5 py-1.5 text-[1rem] font-semibold leading-none sm:self-auto",
   actions:
-    "ml-2 flex shrink-0 items-center justify-end gap-1 md:col-start-6 md:ml-0 md:justify-self-end",
-  editForm: "hidden contents",
+    "ml-auto flex shrink-0 items-center gap-1 self-center",
+  editForm: "hidden flex flex-1 flex-wrap items-center gap-x-5 gap-y-3",
+  editFields:
+    "min-w-0 grid flex-1 grid-cols-[minmax(0,20rem)_auto] items-center gap-x-5",
+  editTextFields: "min-w-0",
+  editMeta: "mt-2 flex items-center gap-5",
   editTitleInput:
-    "min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 md:col-start-2 md:w-full",
+    "w-full min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100",
   editCategoryInput:
-    "min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm italic text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 md:col-start-3 md:w-full",
+    "w-full min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm italic text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100",
   editSelect:
-    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 md:col-start-5",
+    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 sm:w-36",
   editButtons:
-    "flex w-full items-center justify-end gap-2 md:col-start-6 md:w-auto md:justify-self-end",
+    "ml-auto flex shrink-0 items-center gap-2 self-center",
   editPrimaryButton:
     "rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-600",
   editSecondaryButton:
     "rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-700",
-  editError: "hidden w-full text-sm font-medium text-red-600 dark:text-red-400 md:col-[2/-1]",
+  editError: "hidden w-full text-sm font-medium text-red-600 dark:text-red-400",
   editButton:
-    "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent text-lg leading-none text-gray-400 transition-colors hover:text-indigo-500",
+    "relative top-[3px] flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent text-[1.35rem] leading-none text-gray-400 transition-colors hover:text-indigo-500",
   deleteButton:
-    "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent text-3xl leading-none text-gray-400 transition-colors hover:text-red-500"
+    "flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent text-[2.2rem] leading-none text-gray-400 transition-colors hover:text-red-500"
 };
 const TASK_FIELD_MESSAGES = {
   title: {
@@ -631,6 +642,10 @@ function formatPriorityLabel(priority) {
   return priority.charAt(0).toUpperCase() + priority.slice(1);
 }
 
+function updateCheckboxAppearance(checkbox) {
+  checkbox.style.backgroundImage = checkbox.checked ? CHECK_ICON_DATA_URI : "none";
+}
+
 function updateTaskContent(task, elements) {
   elements.title.textContent = task.title;
   elements.category.textContent = task.category;
@@ -649,25 +664,27 @@ function setTaskEditError(elements, message = "") {
   elements.editError.classList.toggle("hidden", !message);
 }
 
-function setTaskEditMode(elements, isEditing) {
+function setTaskEditMode(task, elements, isEditing) {
   elements.article.dataset.editing = String(isEditing);
   elements.editForm.classList.toggle("hidden", !isEditing);
+  elements.content.classList.toggle("hidden", isEditing);
   elements.title.classList.toggle("hidden", isEditing);
   elements.category.classList.toggle("hidden", isEditing);
   elements.badge.classList.toggle("hidden", isEditing);
   elements.badge.hidden = isEditing;
   elements.actions.classList.toggle("hidden", isEditing);
   elements.editBtn.setAttribute("aria-pressed", String(isEditing));
-  elements.checkbox.disabled = isEditing;
-  elements.checkbox.style.opacity = isEditing ? "0.5" : "";
-  elements.checkbox.style.filter = isEditing ? "grayscale(1)" : "";
+  elements.checkbox.setAttribute("aria-disabled", String(isEditing));
+  elements.checkbox.style.pointerEvents = isEditing ? "none" : "";
+  elements.checkbox.style.opacity = isEditing ? "0.6" : "";
   elements.checkbox.style.cursor = isEditing ? "not-allowed" : "";
+  elements.article.className = isEditing
+    ? `${TASK_CLASS_NAMES.articleBase} ${TASK_CLASS_NAMES.article.active}`
+    : `${TASK_CLASS_NAMES.articleBase} ${TASK_CLASS_NAMES.article[task.completed ? "completed" : "active"]}`;
 
-  elements.article.style.display = isEditing ? "grid" : "";
-  elements.article.style.gridTemplateColumns = isEditing
-    ? "auto minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 0.9fr)"
-    : "";
-  elements.article.style.alignItems = isEditing ? "center" : "";
+  elements.article.style.display = "";
+  elements.article.style.gridTemplateColumns = "";
+  elements.article.style.alignItems = "";
 
   if (!isEditing) {
     setTaskEditError(elements);
@@ -693,7 +710,7 @@ function closeAllTaskEditors(excludedTaskId = null) {
       return;
     }
 
-    setTaskEditMode(elements, false);
+    setTaskEditMode(task, elements, false);
   });
 }
 
@@ -701,7 +718,7 @@ function closeAllTaskEditors(excludedTaskId = null) {
  * Crea los elementos del DOM necesarios para representar una tarea.
  *
  * @param {{ id: string, title: string, category: string, priority: string, completed: boolean }} task Tarea a representar.
- * @returns {{ article: HTMLElement, checkbox: HTMLInputElement, title: HTMLSpanElement, category: HTMLSpanElement, badge: HTMLSpanElement, actions: HTMLDivElement, editForm: HTMLFormElement, editTitleInput: HTMLInputElement, editCategoryInput: HTMLInputElement, editPriorityInput: HTMLSelectElement, editError: HTMLParagraphElement, editBtn: HTMLButtonElement, cancelEditBtn: HTMLButtonElement, saveEditBtn: HTMLButtonElement, deleteBtn: HTMLButtonElement }} Elementos creados para la tarea.
+ * @returns {{ article: HTMLElement, checkbox: HTMLInputElement, content: HTMLDivElement, title: HTMLSpanElement, category: HTMLSpanElement, badge: HTMLSpanElement, actions: HTMLDivElement, editForm: HTMLFormElement, editTitleInput: HTMLInputElement, editCategoryInput: HTMLInputElement, editPriorityInput: HTMLSelectElement, editError: HTMLParagraphElement, editBtn: HTMLButtonElement, cancelEditBtn: HTMLButtonElement, saveEditBtn: HTMLButtonElement, deleteBtn: HTMLButtonElement }} Elementos creados para la tarea.
  */
 function createTaskElement(task) {
   const article = document.createElement("article");
@@ -716,6 +733,7 @@ function createTaskElement(task) {
   checkbox.checked = task.completed;
   checkbox.className = TASK_CLASS_NAMES.checkbox;
   checkbox.setAttribute("aria-label", `Marcar tarea ${task.title} como completada`);
+  updateCheckboxAppearance(checkbox);
 
   const title = document.createElement("span");
   title.textContent = task.title;
@@ -726,6 +744,19 @@ function createTaskElement(task) {
   const badge = document.createElement("span");
   badge.className = `${TASK_CLASS_NAMES.badge} ${getPriorityClasses(task.priority)}`;
   badge.textContent = formatPriorityLabel(task.priority);
+
+  const content = document.createElement("div");
+  content.className = TASK_CLASS_NAMES.content;
+
+  const textGroup = document.createElement("div");
+  textGroup.className = TASK_CLASS_NAMES.textGroup;
+
+  const meta = document.createElement("div");
+  meta.className = TASK_CLASS_NAMES.meta;
+  meta.append(category);
+
+  textGroup.append(title, meta);
+  content.append(textGroup, badge);
 
   const actions = document.createElement("div");
   actions.className = TASK_CLASS_NAMES.actions;
@@ -745,6 +776,12 @@ function createTaskElement(task) {
   const editForm = document.createElement("form");
   editForm.className = TASK_CLASS_NAMES.editForm;
 
+  const editFields = document.createElement("div");
+  editFields.className = TASK_CLASS_NAMES.editFields;
+
+  const editTextFields = document.createElement("div");
+  editTextFields.className = TASK_CLASS_NAMES.editTextFields;
+
   const editTitleInput = document.createElement("input");
   editTitleInput.type = "text";
   editTitleInput.value = task.title;
@@ -760,6 +797,9 @@ function createTaskElement(task) {
   editCategoryInput.autocomplete = "off";
   editCategoryInput.required = true;
   editCategoryInput.setAttribute("aria-label", `Editar categoria de ${task.title}`);
+
+  const editMeta = document.createElement("div");
+  editMeta.className = TASK_CLASS_NAMES.editMeta;
 
   const editPriorityInput = document.createElement("select");
   editPriorityInput.className = TASK_CLASS_NAMES.editSelect;
@@ -790,21 +830,20 @@ function createTaskElement(task) {
   editError.className = TASK_CLASS_NAMES.editError;
   editError.setAttribute("aria-live", "assertive");
 
+  editMeta.append(editCategoryInput);
+  editTextFields.append(editTitleInput, editMeta);
   editButtons.append(saveEditBtn, cancelEditBtn);
-  editForm.append(
-    editTitleInput,
-    editCategoryInput,
-    editPriorityInput,
-    editButtons,
-    editError
-  );
+  editFields.append(editTextFields);
+  editFields.append(editPriorityInput);
+  editForm.append(editFields, editButtons, editError);
 
   actions.append(editBtn, deleteBtn);
-  article.append(checkbox, title, category, badge, editForm, actions);
+  article.append(checkbox, content, actions, editForm);
 
   return {
     article,
     checkbox,
+    content,
     title,
     category,
     badge,
@@ -891,6 +930,7 @@ function attachTaskEventHandlers(task, elements) {
 
   checkbox.addEventListener("change", () => {
     task.completed = checkbox.checked;
+    updateCheckboxAppearance(checkbox);
     updateTaskStyle(task, elements);
     commitTasksChange();
   });
@@ -899,20 +939,20 @@ function attachTaskEventHandlers(task, elements) {
     const isEditing = article.dataset.editing === "true";
 
     if (isEditing) {
-      setTaskEditMode(elements, false);
+      setTaskEditMode(task, elements, false);
       return;
     }
 
     closeAllTaskEditors(task.id);
     populateTaskEditor(task, elements);
     setTaskEditError(elements);
-    setTaskEditMode(elements, true);
+    setTaskEditMode(task, elements, true);
     editTitleInput.focus();
   });
 
   cancelEditBtn.addEventListener("click", () => {
     populateTaskEditor(task, elements);
-    setTaskEditMode(elements, false);
+    setTaskEditMode(task, elements, false);
   });
 
   editTitleInput.addEventListener("input", () => setTaskEditError(elements));
@@ -939,7 +979,7 @@ function attachTaskEventHandlers(task, elements) {
     task.priority = validation.priority;
     updateTaskContent(task, elements);
     updateTaskStyle(task, elements);
-    setTaskEditMode(elements, false);
+    setTaskEditMode(task, elements, false);
     commitTasksChange();
   });
 
