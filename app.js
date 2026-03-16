@@ -22,7 +22,7 @@ const PRIORITY_CLASS_NAMES = {
 };
 const TASK_CLASS_NAMES = {
   articleBase:
-    "mb-3 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 shadow-sm transition-transform hover:-translate-y-[2px] hover:shadow-lg md:grid md:grid-cols-[auto_20ch_10ch_1fr_6rem_2.5rem] md:items-center md:justify-normal md:gap-x-4 md:gap-y-0",
+    "mb-3 flex items-center justify-between gap-3 rounded-lg border px-3 py-2 shadow-sm transition-transform hover:-translate-y-[2px] hover:shadow-lg md:grid md:grid-cols-[auto_20ch_10ch_1fr_6rem_5.5rem] md:items-center md:justify-normal md:gap-x-4 md:gap-y-0",
   article: {
     active: "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800",
     completed:
@@ -43,8 +43,26 @@ const TASK_CLASS_NAMES = {
   checkbox: "h-4 w-4 shrink-0 accent-slate-600",
   badge:
     "inline-flex w-fit shrink-0 items-center rounded-full px-2 py-1 text-xs font-semibold md:col-start-5 md:justify-self-start",
+  actions:
+    "ml-2 flex shrink-0 items-center justify-end gap-1 md:col-start-6 md:ml-0 md:justify-self-end",
+  editForm: "hidden contents",
+  editTitleInput:
+    "min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 md:col-start-2 md:w-full",
+  editCategoryInput:
+    "min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm italic text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 md:col-start-3 md:w-full",
+  editSelect:
+    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 md:col-start-5",
+  editButtons:
+    "flex w-full items-center justify-end gap-2 md:col-start-6 md:w-auto md:justify-self-end",
+  editPrimaryButton:
+    "rounded-lg bg-indigo-500 px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-600",
+  editSecondaryButton:
+    "rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-700",
+  editError: "hidden w-full text-sm font-medium text-red-600 dark:text-red-400 md:col-[2/-1]",
+  editButton:
+    "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent text-lg leading-none text-gray-400 transition-colors hover:text-indigo-500",
   deleteButton:
-    "ml-2 flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent text-3xl leading-none text-gray-400 transition-colors hover:text-red-500 md:col-start-6 md:ml-0 md:justify-self-end"
+    "flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent text-3xl leading-none text-gray-400 transition-colors hover:text-red-500"
 };
 const TASK_FIELD_MESSAGES = {
   title: {
@@ -312,8 +330,11 @@ function updateTaskDraggability() {
       return;
     }
 
-    elements.article.draggable = canReorderTasks;
-    elements.article.style.cursor = canReorderTasks ? "grab" : "";
+    const canReorderCurrentTask =
+      canReorderTasks && elements.article.dataset.editing !== "true";
+
+    elements.article.draggable = canReorderCurrentTask;
+    elements.article.style.cursor = canReorderCurrentTask ? "grab" : "";
 
     if (!canReorderTasks) {
       elements.article.setAttribute("aria-grabbed", "false");
@@ -544,9 +565,10 @@ function validateTextField(value, { required, min, max }) {
  * @param {string} title Titulo introducido por la persona usuaria.
  * @param {string} category Categoria introducida por la persona usuaria.
  * @param {string} priority Prioridad seleccionada por la persona usuaria.
+ * @param {string | null} [excludedTaskId=null] Identificador de tarea que se excluye de la comprobacion de duplicados.
  * @returns {{ isValid: false, error: string } | { isValid: true, title: string, category: string, priority: string }} Resultado de la validacion.
  */
-function validateTaskInput(title, category, priority) {
+function validateTaskInput(title, category, priority, excludedTaskId = null) {
   const titleResult = validateTextField(title, TASK_FIELD_MESSAGES.title);
   if (!titleResult.isValid) {
     return titleResult;
@@ -573,7 +595,9 @@ function validateTaskInput(title, category, priority) {
   }
 
   const isDuplicateTitle = tasks.some(
-    (task) => task.title.toLowerCase() === normalizedTitle.toLowerCase()
+    (task) =>
+      task.id !== excludedTaskId &&
+      task.title.toLowerCase() === normalizedTitle.toLowerCase()
   );
 
   if (isDuplicateTitle) {
@@ -603,11 +627,81 @@ function updatePriorityInputAppearance() {
   });
 }
 
+function formatPriorityLabel(priority) {
+  return priority.charAt(0).toUpperCase() + priority.slice(1);
+}
+
+function updateTaskContent(task, elements) {
+  elements.title.textContent = task.title;
+  elements.category.textContent = task.category;
+  elements.badge.className = `${TASK_CLASS_NAMES.badge} ${getPriorityClasses(task.priority)}`;
+  elements.badge.textContent = formatPriorityLabel(task.priority);
+  elements.checkbox.setAttribute(
+    "aria-label",
+    `Marcar tarea ${task.title} como completada`
+  );
+  elements.editBtn.setAttribute("aria-label", `Editar tarea ${task.title}`);
+  elements.deleteBtn.setAttribute("aria-label", `Eliminar tarea ${task.title}`);
+}
+
+function setTaskEditError(elements, message = "") {
+  elements.editError.textContent = message;
+  elements.editError.classList.toggle("hidden", !message);
+}
+
+function setTaskEditMode(elements, isEditing) {
+  elements.article.dataset.editing = String(isEditing);
+  elements.editForm.classList.toggle("hidden", !isEditing);
+  elements.title.classList.toggle("hidden", isEditing);
+  elements.category.classList.toggle("hidden", isEditing);
+  elements.badge.classList.toggle("hidden", isEditing);
+  elements.badge.hidden = isEditing;
+  elements.actions.classList.toggle("hidden", isEditing);
+  elements.editBtn.setAttribute("aria-pressed", String(isEditing));
+  elements.checkbox.disabled = isEditing;
+  elements.checkbox.style.opacity = isEditing ? "0.5" : "";
+  elements.checkbox.style.filter = isEditing ? "grayscale(1)" : "";
+  elements.checkbox.style.cursor = isEditing ? "not-allowed" : "";
+
+  elements.article.style.display = isEditing ? "grid" : "";
+  elements.article.style.gridTemplateColumns = isEditing
+    ? "auto minmax(0, 1.6fr) minmax(0, 1.1fr) minmax(0, 0.9fr)"
+    : "";
+  elements.article.style.alignItems = isEditing ? "center" : "";
+
+  if (!isEditing) {
+    setTaskEditError(elements);
+  }
+
+  updateTaskDraggability();
+}
+
+function populateTaskEditor(task, elements) {
+  elements.editTitleInput.value = task.title;
+  elements.editCategoryInput.value = task.category;
+  elements.editPriorityInput.value = task.priority;
+}
+
+function closeAllTaskEditors(excludedTaskId = null) {
+  tasks.forEach((task) => {
+    if (task.id === excludedTaskId) {
+      return;
+    }
+
+    const elements = taskElements.get(task);
+    if (!elements || elements.article.dataset.editing !== "true") {
+      return;
+    }
+
+    setTaskEditMode(elements, false);
+  });
+}
+
 /**
  * Crea los elementos del DOM necesarios para representar una tarea.
  *
  * @param {{ id: string, title: string, category: string, priority: string, completed: boolean }} task Tarea a representar.
- * @returns {{ article: HTMLElement, checkbox: HTMLInputElement, title: HTMLSpanElement, category: HTMLSpanElement, badge: HTMLSpanElement, deleteBtn: HTMLButtonElement }} Elementos creados para la tarea.
+ * @returns {{ article: HTMLElement, checkbox: HTMLInputElement, title: HTMLSpanElement, category: HTMLSpanElement, badge: HTMLSpanElement, actions: HTMLDivElement, editForm: HTMLFormElement, editTitleInput: HTMLInputElement, editCategoryInput: HTMLInputElement, editPriorityInput: HTMLSelectElement, editError: HTMLParagraphElement, editBtn: HTMLButtonElement, cancelEditBtn: HTMLButtonElement, saveEditBtn: HTMLButtonElement, deleteBtn: HTMLButtonElement }} Elementos creados para la tarea.
  */
 function createTaskElement(task) {
   const article = document.createElement("article");
@@ -631,7 +725,16 @@ function createTaskElement(task) {
 
   const badge = document.createElement("span");
   badge.className = `${TASK_CLASS_NAMES.badge} ${getPriorityClasses(task.priority)}`;
-  badge.textContent = task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
+  badge.textContent = formatPriorityLabel(task.priority);
+
+  const actions = document.createElement("div");
+  actions.className = TASK_CLASS_NAMES.actions;
+
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.textContent = "\u270E";
+  editBtn.className = TASK_CLASS_NAMES.editButton;
+  editBtn.setAttribute("aria-label", `Editar tarea ${task.title}`);
 
   const deleteBtn = document.createElement("button");
   deleteBtn.type = "button";
@@ -639,9 +742,83 @@ function createTaskElement(task) {
   deleteBtn.className = TASK_CLASS_NAMES.deleteButton;
   deleteBtn.setAttribute("aria-label", `Eliminar tarea ${task.title}`);
 
-  article.append(checkbox, title, category, badge, deleteBtn);
+  const editForm = document.createElement("form");
+  editForm.className = TASK_CLASS_NAMES.editForm;
 
-  return { article, checkbox, title, category, badge, deleteBtn };
+  const editTitleInput = document.createElement("input");
+  editTitleInput.type = "text";
+  editTitleInput.value = task.title;
+  editTitleInput.className = TASK_CLASS_NAMES.editTitleInput;
+  editTitleInput.autocomplete = "off";
+  editTitleInput.required = true;
+  editTitleInput.setAttribute("aria-label", `Editar titulo de ${task.title}`);
+
+  const editCategoryInput = document.createElement("input");
+  editCategoryInput.type = "text";
+  editCategoryInput.value = task.category;
+  editCategoryInput.className = TASK_CLASS_NAMES.editCategoryInput;
+  editCategoryInput.autocomplete = "off";
+  editCategoryInput.required = true;
+  editCategoryInput.setAttribute("aria-label", `Editar categoria de ${task.title}`);
+
+  const editPriorityInput = document.createElement("select");
+  editPriorityInput.className = TASK_CLASS_NAMES.editSelect;
+  editPriorityInput.setAttribute("aria-label", `Editar prioridad de ${task.title}`);
+
+  ["alta", "media", "baja"].forEach((priority) => {
+    const option = document.createElement("option");
+    option.value = priority;
+    option.textContent = formatPriorityLabel(priority);
+    option.selected = priority === task.priority;
+    editPriorityInput.append(option);
+  });
+
+  const saveEditBtn = document.createElement("button");
+  saveEditBtn.type = "submit";
+  saveEditBtn.textContent = "Guardar";
+  saveEditBtn.className = TASK_CLASS_NAMES.editPrimaryButton;
+
+  const cancelEditBtn = document.createElement("button");
+  cancelEditBtn.type = "button";
+  cancelEditBtn.textContent = "Cancelar";
+  cancelEditBtn.className = TASK_CLASS_NAMES.editSecondaryButton;
+
+  const editButtons = document.createElement("div");
+  editButtons.className = TASK_CLASS_NAMES.editButtons;
+
+  const editError = document.createElement("p");
+  editError.className = TASK_CLASS_NAMES.editError;
+  editError.setAttribute("aria-live", "assertive");
+
+  editButtons.append(saveEditBtn, cancelEditBtn);
+  editForm.append(
+    editTitleInput,
+    editCategoryInput,
+    editPriorityInput,
+    editButtons,
+    editError
+  );
+
+  actions.append(editBtn, deleteBtn);
+  article.append(checkbox, title, category, badge, editForm, actions);
+
+  return {
+    article,
+    checkbox,
+    title,
+    category,
+    badge,
+    actions,
+    editForm,
+    editTitleInput,
+    editCategoryInput,
+    editPriorityInput,
+    editError,
+    editBtn,
+    cancelEditBtn,
+    saveEditBtn,
+    deleteBtn
+  };
 }
 
 /**
@@ -668,11 +845,21 @@ function commitTasksChange() {
  * Registra los eventos necesarios para completar o eliminar una tarea desde la interfaz.
  *
  * @param {{ id: string, completed: boolean }} task Tarea asociada a los eventos.
- * @param {{ article: HTMLElement, checkbox: HTMLInputElement, deleteBtn: HTMLButtonElement }} elements Elementos interactivos de la tarea.
+ * @param {{ article: HTMLElement, checkbox: HTMLInputElement, title: HTMLSpanElement, category: HTMLSpanElement, badge: HTMLSpanElement, editForm: HTMLFormElement, editTitleInput: HTMLInputElement, editCategoryInput: HTMLInputElement, editPriorityInput: HTMLSelectElement, editError: HTMLParagraphElement, editBtn: HTMLButtonElement, cancelEditBtn: HTMLButtonElement, saveEditBtn: HTMLButtonElement, deleteBtn: HTMLButtonElement }} elements Elementos interactivos de la tarea.
  * @returns {void}
  */
 function attachTaskEventHandlers(task, elements) {
-  const { article, checkbox, deleteBtn } = elements;
+  const {
+    article,
+    checkbox,
+    editForm,
+    editTitleInput,
+    editCategoryInput,
+    editPriorityInput,
+    editBtn,
+    cancelEditBtn,
+    deleteBtn
+  } = elements;
 
   article.addEventListener("dragstart", (event) => {
     if (currentFilter !== "all") {
@@ -705,6 +892,54 @@ function attachTaskEventHandlers(task, elements) {
   checkbox.addEventListener("change", () => {
     task.completed = checkbox.checked;
     updateTaskStyle(task, elements);
+    commitTasksChange();
+  });
+
+  editBtn.addEventListener("click", () => {
+    const isEditing = article.dataset.editing === "true";
+
+    if (isEditing) {
+      setTaskEditMode(elements, false);
+      return;
+    }
+
+    closeAllTaskEditors(task.id);
+    populateTaskEditor(task, elements);
+    setTaskEditError(elements);
+    setTaskEditMode(elements, true);
+    editTitleInput.focus();
+  });
+
+  cancelEditBtn.addEventListener("click", () => {
+    populateTaskEditor(task, elements);
+    setTaskEditMode(elements, false);
+  });
+
+  editTitleInput.addEventListener("input", () => setTaskEditError(elements));
+  editCategoryInput.addEventListener("input", () => setTaskEditError(elements));
+  editPriorityInput.addEventListener("change", () => setTaskEditError(elements));
+
+  editForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const validation = validateTaskInput(
+      editTitleInput.value,
+      editCategoryInput.value,
+      editPriorityInput.value,
+      task.id
+    );
+
+    if (!validation.isValid) {
+      setTaskEditError(elements, validation.error);
+      return;
+    }
+
+    task.title = validation.title;
+    task.category = validation.category;
+    task.priority = validation.priority;
+    updateTaskContent(task, elements);
+    updateTaskStyle(task, elements);
+    setTaskEditMode(elements, false);
     commitTasksChange();
   });
 
