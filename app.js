@@ -12,7 +12,7 @@ const FIELD_LIMITS = {
 const MOON_ICON = "\u{1F311}";
 const SUN_ICON = "\u2600\uFE0F";
 
-const ACTIVE_NAV_CLASSES = ["bg-slate-100", "dark:bg-slate-700", "font-semibold"];
+const ACTIVE_NAV_CLASSES = ["bg-slate-100", "dark:bg-slate-700"];
 const PRIORITY_PLACEHOLDER_CLASSES = ["text-slate-400", "dark:text-slate-500"];
 const PRIORITY_VALUE_CLASSES = ["text-slate-900", "dark:text-slate-100"];
 const PRIORITY_CLASS_NAMES = {
@@ -252,6 +252,10 @@ function setActiveNav(activeButton) {
     button.classList.remove(...ACTIVE_NAV_CLASSES);
     button.setAttribute("aria-pressed", String(button === activeButton));
   });
+
+  if (activeButton) {
+    activeButton.classList.add(...ACTIVE_NAV_CLASSES);
+  }
 }
 
 function isTaskVisible(task) {

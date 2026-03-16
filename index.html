@@ -48,6 +48,12 @@
       <aside
         class="w-full rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 md:w-64"
       >
+        <h2
+          class="mb-4 font-display text-[1.2rem] font-bold text-slate-900 dark:text-slate-100"
+        >
+          &#128205; Men&#250;
+        </h2>
+
         <nav aria-label="Filtros de tareas">
           <ul class="mb-2 flex flex-col gap-2 text-slate-900">
             <li>
@@ -59,7 +65,7 @@
                 aria-pressed="false"
                 class="aside-link inline-flex w-full items-center rounded-lg px-2 py-1 text-slate-900 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-100"
               >
-                Inicio
+                Mostrar todas
               </button>
             </li>
             <li>
@@ -101,7 +107,11 @@
         <section
           class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
         >
-          <h2 class="sr-only">Formulario para añadir tareas</h2>
+          <h2
+            class="mb-4 font-display text-[1.2rem] font-bold text-slate-900 dark:text-slate-100"
+          >
+            &#128196 Nueva tarea
+          </h2>
 
           <form id="task-form" novalidate class="flex flex-wrap gap-3">
             <label class="sr-only" for="task-input">Nombre de la tarea</label>
@@ -157,16 +167,26 @@
         <section
           class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
         >
-          <h2 class="sr-only">Lista de tareas</h2>
+          <h2
+            class="mb-4 font-display text-[1.2rem] font-bold text-slate-900 dark:text-slate-100"
+          >
+            &#x1F58B;&#xFE0F; Mis tareas
+          </h2>
 
-          <div class="mb-4 w-full md:max-w-sm">
+          <div class="relative mb-4 w-full md:max-w-sm">
             <label class="sr-only" for="task-search-input">Buscar tareas</label>
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-sans not-italic text-base text-slate-400 dark:text-slate-500"
+            >
+              &#128269;
+            </span>
             <input
               id="task-search-input"
               type="search"
-              placeholder="Buscar por titulo o categoria"
+              placeholder="Buscar tarea..."
               autocomplete="off"
-              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              class="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-slate-900 italic outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
             />
           </div>
 
