@@ -59,6 +59,11 @@ const TASK_FIELD_MESSAGES = {
   }
 };
 
+/**
+ * @typedef {{ required: string, min: string, max: string }} TextFieldMessages
+ * @typedef {{ isValid: false, error: string } | { isValid: true, value: string }} ValidationResult
+ */
+
 const form = document.querySelector("#task-form");
 const taskInput = document.querySelector("#task-input");
 const categoryInput = document.querySelector("#category-input");
@@ -311,6 +316,21 @@ function getTaskById(taskId) {
   return tasks.find((task) => task.id === taskId) ?? null;
 }
 
+/**
+ * Calcula el elemento visible de la lista delante del que debe mostrarse
+ * el indicador de insercion durante el arrastre.
+ *
+ * El algoritmo compara la posicion vertical actual del puntero con el centro
+ * de cada tarea renderizada y devuelve la primera tarea que queda por debajo
+ * del cursor. Si no encuentra ninguna, la tarea arrastrada se insertara al
+ * final del listado.
+ *
+ * @param {number} pointerY
+ * Coordenada vertical actual del puntero durante el evento de drag.
+ * @returns {HTMLElement | null}
+ * Elemento de referencia antes del cual se mostrara el indicador de insercion,
+ * o `null` si la tarea debe colocarse al final.
+ */
 function getDragAfterElement(pointerY) {
   const draggableArticles = [...taskList.querySelectorAll("[data-task-id]")].filter(
     (article) => article.dataset.taskId !== draggedTaskId && !article.hidden
@@ -360,6 +380,17 @@ function syncTaskOrderWithDOM() {
   saveTasks();
 }
 
+/**
+ * Coloca definitivamente la tarea arrastrada en la posicion marcada por el
+ * indicador visual de insercion y sincroniza el nuevo orden con el estado.
+ *
+ * Cuando termina el arrastre, esta funcion mueve el `<article>` correspondiente
+ * a la tarea activa hasta la posicion actual del `dragIndicator`. Despues
+ * elimina dicho indicador y reconstruye el array `tasks` segun el orden real
+ * del DOM para que la persistencia y los futuros renders respeten ese orden.
+ *
+ * @returns {void}
+ */
 function finalizeDraggedTaskPosition() {
   if (!draggedTaskId) {
     clearDragIndicator();
@@ -382,6 +413,25 @@ function finalizeDraggedTaskPosition() {
   syncTaskOrderWithDOM();
 }
 
+/**
+ * Registra los eventos globales de drag and drop sobre la lista de tareas.
+ *
+ * El sistema de reordenacion funciona asi:
+ * 1. Cada tarea individual inicia el arrastre en `dragstart` y guarda su id en
+ *    `draggedTaskId`.
+ * 2. Mientras el puntero se mueve sobre `#task-list`, el evento `dragover`
+ *    calcula en que posicion deberia caer la tarea usando `getDragAfterElement()`.
+ * 3. Con esa referencia se mueve un indicador visual (`dragIndicator`) que
+ *    muestra el punto exacto de insercion.
+ * 4. Al soltar la tarea (`drop`) o al finalizar el arrastre, se llama a
+ *    `finalizeDraggedTaskPosition()` para mover el nodo, limpiar el indicador y
+ *    persistir el nuevo orden.
+ *
+ * La reordenacion solo esta habilitada cuando el filtro activo es `all`, para
+ * evitar inconsistencias al intentar ordenar una lista parcialmente oculta.
+ *
+ * @returns {void}
+ */
 function attachTaskListDragAndDropHandlers() {
   taskList.addEventListener("dragover", (event) => {
     if (currentFilter !== "all" || !draggedTaskId || !getTaskById(draggedTaskId)) {
@@ -406,6 +456,32 @@ function getPriorityClasses(priority) {
   return PRIORITY_CLASS_NAMES[priority] ?? PRIORITY_CLASS_NAMES.baja;
 }
 
+/**
+ * Crea una respuesta de validacion invalida con un mensaje de error.
+ *
+ * @param {string} error
+ * @returns {ValidationResult}
+ */
+function createValidationError(error) {
+  return {
+    isValid: false,
+    error
+  };
+}
+
+/**
+ * Crea una respuesta de validacion valida con el valor normalizado.
+ *
+ * @param {string} value
+ * @returns {ValidationResult}
+ */
+function createValidationSuccess(value) {
+  return {
+    isValid: true,
+    value
+  };
+}
+
 function setTaskFormError(message = "") {
   if (!taskFormError) {
     return;
@@ -415,34 +491,35 @@ function setTaskFormError(message = "") {
   taskFormError.classList.toggle("hidden", !message);
 }
 
-function validateTextField(value, messages) {
+/**
+ * Normaliza y valida un campo de texto del formulario.
+ *
+ * Recorta espacios al inicio y al final y comprueba que el valor resultante
+ * no este vacio ni fuera de los limites permitidos.
+ *
+ * @param {string} value
+ * Valor introducido en el campo.
+ * @param {TextFieldMessages} messages
+ * Mensajes de error para los casos de obligatorio, minimo y maximo.
+ * @returns {ValidationResult}
+ * Resultado de la validacion con el valor normalizado o el error detectado.
+ */
+function validateTextField(value, { required, min, max }) {
   const normalizedValue = normalizeTextValue(value);
 
   if (!normalizedValue) {
-    return {
-      isValid: false,
-      error: messages.required
-    };
+    return createValidationError(required);
   }
 
   if (normalizedValue.length < FIELD_LIMITS.min) {
-    return {
-      isValid: false,
-      error: messages.min
-    };
+    return createValidationError(min);
   }
 
   if (normalizedValue.length > FIELD_LIMITS.max) {
-    return {
-      isValid: false,
-      error: messages.max
-    };
+    return createValidationError(max);
   }
 
-  return {
-    isValid: true,
-    value: normalizedValue
-  };
+  return createValidationSuccess(normalizedValue);
 }
 
 /**
@@ -454,19 +531,21 @@ function validateTextField(value, messages) {
  * @returns {{ isValid: false, error: string } | { isValid: true, title: string, category: string, priority: string }} Resultado de la validacion.
  */
 function validateTaskInput(title, category, priority) {
-  const titleValidation = validateTextField(title, TASK_FIELD_MESSAGES.title);
-  if (!titleValidation.isValid) {
-    return titleValidation;
+  const titleResult = validateTextField(title, TASK_FIELD_MESSAGES.title);
+  if (!titleResult.isValid) {
+    return titleResult;
   }
 
-  const categoryValidation = validateTextField(
+  const categoryResult = validateTextField(
     category,
     TASK_FIELD_MESSAGES.category
   );
-  if (!categoryValidation.isValid) {
-    return categoryValidation;
+  if (!categoryResult.isValid) {
+    return categoryResult;
   }
 
+  const normalizedTitle = titleResult.value;
+  const normalizedCategory = categoryResult.value;
   const normalizedPriority =
     typeof priority === "string" ? priority.trim().toLowerCase() : "";
 
@@ -477,11 +556,11 @@ function validateTaskInput(title, category, priority) {
     };
   }
 
-  const hasDuplicateTitle = tasks.some(
-    (task) => task.title.toLowerCase() === titleValidation.value.toLowerCase()
+  const isDuplicateTitle = tasks.some(
+    (task) => task.title.toLowerCase() === normalizedTitle.toLowerCase()
   );
 
-  if (hasDuplicateTitle) {
+  if (isDuplicateTitle) {
     return {
       isValid: false,
       error: "Ya existe una tarea con ese titulo."
@@ -490,8 +569,8 @@ function validateTaskInput(title, category, priority) {
 
   return {
     isValid: true,
-    title: titleValidation.value,
-    category: categoryValidation.value,
+    title: normalizedTitle,
+    category: normalizedCategory,
     priority: normalizedPriority
   };
 }
@@ -622,12 +701,29 @@ function attachTaskEventHandlers(task, elements) {
 }
 
 /**
- * Crea, configura e inserta una tarea en la lista visible del documento.
+ * Crea los nodos HTML de una tarea, les aplica su estado visual, registra
+ * sus eventos y los inserta al principio de la lista de tareas de la app.
  *
- * @param {{ id: string, title: string, category: string, priority: string, completed: boolean }} task Tarea que se va a renderizar.
- * @param {{ applyCurrentFilter?: boolean }} [options={}] Opciones de renderizado.
- * @param {boolean} [options.applyCurrentFilter=true] Indica si se debe reaplicar el filtro actual tras insertar la tarea.
+ * Dentro del flujo de la aplicacion, esta funcion es la encargada de reflejar
+ * una tarea del estado interno (`tasks`) en el DOM mediante un nuevo
+ * `<article>` dentro de `#task-list`.
+ *
+ * @param {{ id: string, title: string, category: string, priority: string, completed: boolean }} task
+ * Tarea que se va a representar en la interfaz.
+ * @param {{ applyCurrentFilter?: boolean }} [options={}]
+ * Opciones que controlan el renderizado posterior a la insercion.
+ * @param {boolean} [options.applyCurrentFilter=true]
+ * Si es `true`, vuelve a aplicar el filtro activo para ocultar o mostrar
+ * la tarea recien insertada segun el estado actual de la vista.
  * @returns {void}
+ *
+ * @sideEffects
+ * - Crea nuevos elementos del DOM para la tarea.
+ * - Inserta el elemento visual en `#task-list` usando `prepend()`.
+ * - Guarda la relacion entre la tarea y sus nodos asociados en `taskElements`.
+ * - Registra listeners para completar, eliminar y arrastrar la tarea.
+ * - Puede actualizar la visibilidad y capacidad de arrastre del listado al
+ *   reaplicar el filtro actual.
  */
 function addTaskToDOM(task, { applyCurrentFilter = true } = {}) {
   const elements = createTaskElement(task);
