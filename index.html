@@ -97,71 +97,87 @@
         </nav>
       </aside>
 
-      <section
-        class="flex flex-1 flex-col gap-3 rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
-      >
-        <h2 class="sr-only">Gestor de tareas</h2>
-        <form
-          id="task-form"
-          novalidate
-          class="flex flex-wrap gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-lg dark:border-slate-700 dark:bg-slate-900/60"
+      <div class="flex flex-1 flex-col gap-3">
+        <section
+          class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
         >
-          <label class="sr-only" for="task-input">Nombre de la tarea</label>
-          <input
-            class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-            type="text"
-            id="task-input"
-            name="task"
-            placeholder="Tarea"
-            autocomplete="off"
-            required
-          />
+          <h2 class="sr-only">Formulario para añadir tareas</h2>
 
-          <label class="sr-only" for="category-input">Categoria</label>
-          <input
-            class="min-w-[180px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-            type="text"
-            id="category-input"
-            name="category"
-            placeholder="Categoria"
-            autocomplete="off"
-            required
-          />
+          <form id="task-form" novalidate class="flex flex-wrap gap-3">
+            <label class="sr-only" for="task-input">Nombre de la tarea</label>
+            <input
+              class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              type="text"
+              id="task-input"
+              name="task"
+              placeholder="Tarea"
+              autocomplete="off"
+              required
+            />
 
-          <label class="sr-only" for="priority-input">Prioridad</label>
-          <select
-            id="priority-input"
-            name="priority"
-            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-gray-300 dark:bg-slate-800 dark:text-slate-500 sm:w-36"
-            required
-          >
-            <option value="" selected disabled>Prioridad</option>
-            <option value="alta">Alta</option>
-            <option value="media">Media</option>
-            <option value="baja">Baja</option>
-          </select>
+            <label class="sr-only" for="category-input">Categoria</label>
+            <input
+              class="min-w-[180px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              type="text"
+              id="category-input"
+              name="category"
+              placeholder="Categoria"
+              autocomplete="off"
+              required
+            />
 
-          <button
-            type="submit"
-            class="w-full rounded-lg bg-indigo-500 px-4 py-2 font-semibold text-white transition hover:bg-indigo-600 sm:w-auto"
-          >
-            A&#241;adir
-          </button>
+            <label class="sr-only" for="priority-input">Prioridad</label>
+            <select
+              id="priority-input"
+              name="priority"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-gray-300 dark:bg-slate-800 dark:text-slate-500 sm:w-36"
+              required
+            >
+              <option value="" selected disabled>Prioridad</option>
+              <option value="alta">Alta</option>
+              <option value="media">Media</option>
+              <option value="baja">Baja</option>
+            </select>
 
-          <p
-            id="task-form-error"
-            class="hidden w-full text-sm font-medium text-red-600 dark:text-red-400"
-            aria-live="assertive"
-          ></p>
-        </form>
+            <button
+              type="submit"
+              class="w-full rounded-lg bg-indigo-500 px-4 py-2 font-semibold text-white transition hover:bg-indigo-600 sm:w-auto"
+            >
+              A&#241;adir
+            </button>
 
-        <div
-          id="task-list"
-          role="list"
-          aria-live="polite"
-          aria-label="Lista de tareas"
-        ></div>
-      </section>
+            <p
+              id="task-form-error"
+              class="hidden w-full text-sm font-medium text-red-600 dark:text-red-400"
+              aria-live="assertive"
+            ></p>
+          </form>
+        </section>
+
+        <section
+          class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
+        >
+          <h2 class="sr-only">Lista de tareas</h2>
+
+          <div class="mb-4 w-full md:max-w-sm">
+            <label class="sr-only" for="task-search-input">Buscar tareas</label>
+            <input
+              id="task-search-input"
+              type="search"
+              placeholder="Buscar por titulo o categoria"
+              autocomplete="off"
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
+          </div>
+
+          <div
+            id="task-list"
+            role="list"
+            aria-live="polite"
+            aria-label="Lista de tareas"
+          ></div>
+        </section>
+      </div>
     </main>
     <script src="app.js" defer></script>
   </body>

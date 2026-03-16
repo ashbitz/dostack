@@ -68,6 +68,7 @@ const form = document.querySelector("#task-form");
 const taskInput = document.querySelector("#task-input");
 const categoryInput = document.querySelector("#category-input");
 const priorityInput = document.querySelector("#priority-input");
+const taskSearchInput = document.querySelector("#task-search-input");
 const taskFormError = document.querySelector("#task-form-error");
 const taskList = document.querySelector("#task-list");
 const themeToggle = document.querySelector("#theme-toggle");
@@ -75,6 +76,7 @@ const filterButtons = document.querySelectorAll("[data-filter]");
 
 let tasks = [];
 let currentFilter = "all";
+let currentSearchTerm = "";
 const taskElements = new WeakMap();
 let draggedTaskId = null;
 const dragIndicator = document.createElement("div");
@@ -264,6 +266,16 @@ function isTaskVisible(task) {
   return true;
 }
 
+function matchesSearch(task) {
+  if (!currentSearchTerm) {
+    return true;
+  }
+
+  return [task.title, task.category].some((value) =>
+    value.toLowerCase().includes(currentSearchTerm)
+  );
+}
+
 /**
  * Aplica el filtro de visibilidad actual a las tareas renderizadas en el DOM.
  *
@@ -276,14 +288,14 @@ function applyFilter() {
       return;
     }
 
-    elements.article.hidden = !isTaskVisible(task);
+    elements.article.hidden = !(isTaskVisible(task) && matchesSearch(task));
   });
 
   updateTaskDraggability();
 }
 
 function updateTaskDraggability() {
-  const canReorderTasks = currentFilter === "all";
+  const canReorderTasks = currentFilter === "all" && !currentSearchTerm;
 
   if (!canReorderTasks) {
     clearDragIndicator();
@@ -792,6 +804,11 @@ priorityInput.addEventListener("change", () => {
 });
 
 updatePriorityInputAppearance();
+
+taskSearchInput.addEventListener("input", () => {
+  currentSearchTerm = normalizeTextValue(taskSearchInput.value).toLowerCase();
+  applyFilter();
+});
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
