@@ -38,7 +38,7 @@ const PRIORITY_CLASS_NAMES = {
 };
 const TASK_CLASS_NAMES = {
   articleBase:
-    "mb-3 rounded-lg border px-3 py-2 shadow-sm transition-transform hover:-translate-y-[2px] hover:shadow-lg",
+    "mb-2 rounded-lg border px-2.5 py-1.5 shadow-sm transition-transform hover:-translate-y-[2px] hover:shadow-lg md:mb-3 md:px-3 md:py-2",
   article: {
     active: "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800",
     completed:
@@ -118,6 +118,25 @@ const taskPriorityFilter = document.querySelector("#task-priority-filter");
 const taskStatusFilter = document.querySelector("#task-status-filter");
 const completeAllBtn = document.querySelector("#complete-all-btn");
 const categoryAsideList = document.querySelector("#category-aside-list");
+const mobileMenuToggle = document.querySelector("#mobile-menu-toggle");
+const mobileFilterDrawer = document.querySelector("#mobile-filter-drawer");
+const mobileFilterCloseBtn = document.querySelector("#mobile-filter-close-btn");
+const mobileFilterCloseBackdrop = document.querySelector("#mobile-filter-close-backdrop");
+const mobileFilterAcceptBtn = document.querySelector("#mobile-filter-accept-btn");
+const mobileTaskSearchInput = document.querySelector("#mobile-task-search-input");
+const mobileTaskPriorityFilter = document.querySelector("#mobile-task-priority-filter");
+const mobileTaskStatusFilter = document.querySelector("#mobile-task-status-filter");
+const mobileCategoryFilterList = document.querySelector("#mobile-category-filter-list");
+const mobileCompleteAllBtn = document.querySelector("#mobile-complete-all-btn");
+const mobileTaskFab = document.querySelector("#mobile-task-fab");
+const mobileTaskModal = document.querySelector("#mobile-task-modal");
+const mobileTaskModalCloseBtn = document.querySelector("#mobile-task-modal-close-btn");
+const mobileTaskModalBackdrop = document.querySelector("#mobile-task-modal-backdrop");
+const mobileTaskForm = document.querySelector("#mobile-task-form");
+const mobileTaskInput = document.querySelector("#mobile-task-input");
+const mobileCategoryInput = document.querySelector("#mobile-category-input");
+const mobilePriorityInput = document.querySelector("#mobile-priority-input");
+const mobileTaskFormError = document.querySelector("#mobile-task-form-error");
 const taskFormError = document.querySelector("#task-form-error");
 const taskList = document.querySelector("#task-list");
 const themeToggle = document.querySelector("#theme-toggle");
@@ -376,19 +395,9 @@ function setCurrentCategoryFilter(category) {
   currentFilter = "all";
   currentPriorityFilter = "all";
   currentSearchTerm = "";
-
-  if (taskStatusFilter) {
-    taskStatusFilter.value = "all";
-  }
-
-  if (taskPriorityFilter) {
-    taskPriorityFilter.value = "all";
-  }
-
-  if (taskSearchInput) {
-    taskSearchInput.value = "";
-  }
-
+  syncStatusFilterUI();
+  syncPriorityFilterUI();
+  syncSearchUI();
   syncCategoryFilterUI();
   applyFilter();
 }
@@ -399,11 +408,19 @@ function setCurrentFilter(filter) {
   }
 
   currentFilter = filter;
+  syncStatusFilterUI();
+  applyFilter();
+}
 
-  if (taskStatusFilter) {
-    taskStatusFilter.value = filter;
-  }
+function setCurrentPriorityFilter(priority) {
+  currentPriorityFilter = priority;
+  syncPriorityFilterUI();
+  applyFilter();
+}
 
+function setCurrentSearchTerm(searchTerm) {
+  currentSearchTerm = searchTerm;
+  syncSearchUI();
   applyFilter();
 }
 
@@ -668,12 +685,82 @@ function createValidationSuccess(value) {
 }
 
 function setTaskFormError(message = "") {
-  if (!taskFormError) {
+  setFormError(taskFormError, message);
+}
+
+function setFormError(element, message = "") {
+  if (!element) {
     return;
   }
 
-  taskFormError.textContent = message;
-  taskFormError.classList.toggle("hidden", !message);
+  element.textContent = message;
+  element.classList.toggle("hidden", !message);
+}
+
+function syncSearchUI() {
+  if (taskSearchInput) {
+    taskSearchInput.value = currentSearchTerm;
+  }
+
+  if (mobileTaskSearchInput) {
+    mobileTaskSearchInput.value = currentSearchTerm;
+  }
+}
+
+function syncPriorityFilterUI() {
+  if (taskPriorityFilter) {
+    taskPriorityFilter.value = currentPriorityFilter;
+  }
+
+  if (mobileTaskPriorityFilter) {
+    mobileTaskPriorityFilter.value = currentPriorityFilter;
+  }
+}
+
+function syncStatusFilterUI() {
+  if (taskStatusFilter) {
+    taskStatusFilter.value = currentFilter;
+  }
+
+  if (mobileTaskStatusFilter) {
+    mobileTaskStatusFilter.value = currentFilter;
+  }
+}
+
+function updateMobileOverlayLock() {
+  const hasOpenMobileOverlay =
+    !mobileFilterDrawer?.classList.contains("hidden") ||
+    !mobileTaskModal?.classList.contains("hidden");
+
+  document.body.classList.toggle("overflow-hidden", hasOpenMobileOverlay);
+}
+
+function setMobileFilterDrawerOpen(isOpen) {
+  if (!mobileFilterDrawer || !mobileMenuToggle) {
+    return;
+  }
+
+  mobileFilterDrawer.classList.toggle("hidden", !isOpen);
+  mobileMenuToggle.setAttribute("aria-expanded", String(isOpen));
+  updateMobileOverlayLock();
+}
+
+function setMobileTaskModalOpen(isOpen) {
+  if (!mobileTaskModal) {
+    return;
+  }
+
+  if (isOpen) {
+    setMobileFilterDrawerOpen(false);
+    setFormError(mobileTaskFormError);
+  }
+
+  mobileTaskModal.classList.toggle("hidden", !isOpen);
+  updateMobileOverlayLock();
+
+  if (isOpen) {
+    mobileTaskInput?.focus();
+  }
 }
 
 /**
@@ -1222,18 +1309,64 @@ function renderStoredTasks() {
   applyFilter();
 }
 
-function renderCategoryAsideFilters() {
-  if (!categoryAsideList) {
+function submitNewTask({
+  titleField,
+  categoryField,
+  priorityField,
+  errorField,
+  onSuccess
+}) {
+  const validation = validateTaskInput(
+    titleField.value,
+    categoryField.value,
+    priorityField.value
+  );
+
+  if (!validation.isValid) {
+    setFormError(errorField, validation.error);
     return;
   }
 
-  const allCategoriesButton = categoryAsideList.querySelector(
+  setFormError(errorField);
+  titleField.value = validation.title;
+  categoryField.value = validation.category;
+  priorityField.value = validation.priority;
+
+  const newTask = normalizeTask({
+    id: createTaskId(),
+    title: validation.title,
+    category: validation.category,
+    priority: validation.priority,
+    completed: false
+  });
+
+  if (!newTask) {
+    return;
+  }
+
+  tasks.push(newTask);
+  saveTasks();
+  addTaskToDOM(newTask);
+  onSuccess?.();
+}
+
+function renderCategoryAsideFilters(container) {
+  if (!container) {
+    return;
+  }
+
+  const closesMobileDrawerOnSelection = container === mobileCategoryFilterList;
+
+  const allCategoriesButton = container.querySelector(
     '[data-category-filter="all"]'
   );
 
   if (allCategoriesButton) {
     allCategoriesButton.addEventListener("click", () => {
       setCurrentCategoryFilter("all");
+      if (closesMobileDrawerOnSelection) {
+        setMobileFilterDrawerOpen(false);
+      }
     });
   }
 
@@ -1250,14 +1383,18 @@ function renderCategoryAsideFilters() {
     button.innerHTML = category.labelHtml;
     button.addEventListener("click", () => {
       setCurrentCategoryFilter(category.value);
+      if (closesMobileDrawerOnSelection) {
+        setMobileFilterDrawerOpen(false);
+      }
     });
 
     listItem.append(button);
-    categoryAsideList.append(listItem);
+    container.append(listItem);
   });
 }
 
-renderCategoryAsideFilters();
+renderCategoryAsideFilters(categoryAsideList);
+renderCategoryAsideFilters(mobileCategoryFilterList);
 attachTaskListDragAndDropHandlers();
 
 const savedTheme = getStorageItem(STORAGE_KEYS.theme);
@@ -1280,17 +1417,22 @@ renderStoredTasks();
 
 taskInput.addEventListener("input", () => setTaskFormError());
 createCategoryOptions(categoryInput, { includePlaceholder: true });
+createCategoryOptions(mobileCategoryInput, { includePlaceholder: true });
 updateCategoryInputAppearance();
 syncCategoryFilterUI();
-taskStatusFilter.value = currentFilter;
+syncStatusFilterUI();
+syncPriorityFilterUI();
+syncSearchUI();
 
 categoryInput.addEventListener("change", () => {
   setTaskFormError();
   updateCategoryInputAppearance();
 });
+mobileTaskInput.addEventListener("input", () => setFormError(mobileTaskFormError));
+mobileCategoryInput.addEventListener("change", () => setFormError(mobileTaskFormError));
+mobilePriorityInput.addEventListener("change", () => setFormError(mobileTaskFormError));
 taskPriorityFilter.addEventListener("change", () => {
-  currentPriorityFilter = taskPriorityFilter.value;
-  applyFilter();
+  setCurrentPriorityFilter(taskPriorityFilter.value);
 });
 taskStatusFilter.addEventListener("change", () => {
   setCurrentFilter(taskStatusFilter.value);
@@ -1299,15 +1441,25 @@ priorityInput.addEventListener("change", () => {
   setTaskFormError();
   updatePriorityInputAppearance();
 });
+mobileTaskPriorityFilter.addEventListener("change", () => {
+  setCurrentPriorityFilter(mobileTaskPriorityFilter.value);
+});
+mobileTaskStatusFilter.addEventListener("change", () => {
+  setCurrentFilter(mobileTaskStatusFilter.value);
+});
 
 updatePriorityInputAppearance();
 
 taskSearchInput.addEventListener("input", () => {
-  currentSearchTerm = normalizeTextValue(taskSearchInput.value).toLowerCase();
-  applyFilter();
+  setCurrentSearchTerm(normalizeTextValue(taskSearchInput.value).toLowerCase());
+});
+mobileTaskSearchInput.addEventListener("input", () => {
+  setCurrentSearchTerm(
+    normalizeTextValue(mobileTaskSearchInput.value).toLowerCase()
+  );
 });
 
-completeAllBtn.addEventListener("click", () => {
+function completeAllTasks() {
   let hasChanges = false;
 
   tasks.forEach((task) => {
@@ -1329,46 +1481,58 @@ completeAllBtn.addEventListener("click", () => {
   }
 
   commitTasksChange();
-});
+}
+
+completeAllBtn.addEventListener("click", () => completeAllTasks());
+mobileCompleteAllBtn.addEventListener("click", () => completeAllTasks());
+
+mobileMenuToggle.addEventListener("click", () => setMobileFilterDrawerOpen(true));
+mobileFilterCloseBtn.addEventListener("click", () => setMobileFilterDrawerOpen(false));
+mobileFilterCloseBackdrop.addEventListener("click", () =>
+  setMobileFilterDrawerOpen(false)
+);
+mobileFilterAcceptBtn.addEventListener("click", () =>
+  setMobileFilterDrawerOpen(false)
+);
+mobileTaskFab.addEventListener("click", () => setMobileTaskModalOpen(true));
+mobileTaskModalCloseBtn.addEventListener("click", () =>
+  setMobileTaskModalOpen(false)
+);
+mobileTaskModalBackdrop.addEventListener("click", () =>
+  setMobileTaskModalOpen(false)
+);
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
-
-  const validation = validateTaskInput(
-    taskInput.value,
-    categoryInput.value,
-    priorityInput.value
-  );
-
-  if (!validation.isValid) {
-    setTaskFormError(validation.error);
-    return;
-  }
-
-  setTaskFormError();
-  taskInput.value = validation.title;
-  categoryInput.value = validation.category;
-
-  const newTask = normalizeTask({
-    id: createTaskId(),
-    title: validation.title,
-    category: validation.category,
-    priority: validation.priority,
-    completed: false
+  submitNewTask({
+    titleField: taskInput,
+    categoryField: categoryInput,
+    priorityField: priorityInput,
+    errorField: taskFormError,
+    onSuccess: () => {
+      taskInput.value = "";
+      categoryInput.value = "";
+      priorityInput.value = "";
+      updateCategoryInputAppearance();
+      updatePriorityInputAppearance();
+      taskInput.focus();
+    }
   });
+});
 
-  if (!newTask) {
-    return;
-  }
-
-  tasks.push(newTask);
-  saveTasks();
-  addTaskToDOM(newTask);
-
-  taskInput.value = "";
-  categoryInput.value = "";
-  priorityInput.value = "";
-  updateCategoryInputAppearance();
-  updatePriorityInputAppearance();
-  taskInput.focus();
+mobileTaskForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  submitNewTask({
+    titleField: mobileTaskInput,
+    categoryField: mobileCategoryInput,
+    priorityField: mobilePriorityInput,
+    errorField: mobileTaskFormError,
+    onSuccess: () => {
+      mobileTaskInput.value = "";
+      mobileCategoryInput.value = "";
+      mobilePriorityInput.value = "";
+      setFormError(mobileTaskFormError);
+      setMobileTaskModalOpen(false);
+    }
+  });
 });

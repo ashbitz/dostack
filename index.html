@@ -25,10 +25,21 @@
       class="w-full border border-gray-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
     >
       <div
-        class="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4 px-4 py-4 md:px-12 md:py-5"
+        class="relative mx-auto flex w-full max-w-[1500px] items-center justify-between gap-3 px-3 py-3 md:gap-4 md:px-12 md:py-5"
       >
-        <h1 class="flex items-center text-3xl font-bold">
-          <img src="icon.png" alt="Logo de Taskify" class="mr-2 h-9 w-9" />
+        <button
+          id="mobile-menu-toggle"
+          type="button"
+          aria-label="Abrir filtros"
+          aria-controls="mobile-filter-drawer"
+          aria-expanded="false"
+          class="flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 bg-white text-xl transition hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 md:hidden"
+        >
+          &#9776;
+        </button>
+
+        <h1 class="absolute left-1/2 flex -translate-x-1/2 items-center text-2xl font-bold md:static md:translate-x-0 md:text-3xl">
+          <img src="icon.png" alt="Logo de Taskify" class="mr-2 h-8 w-8" />
           Do<span class="text-indigo-500">Stack</span>
         </h1>
 
@@ -45,9 +56,9 @@
     </header>
 
     <main
-      class="mx-auto mt-5 mb-6 flex max-w-[1500px] flex-col gap-3 px-4 md:flex-row md:items-start md:px-0"
+      class="mx-auto mt-3 mb-4 flex max-w-[1500px] flex-col gap-3 px-3 md:mt-5 md:mb-6 md:px-0 md:flex-row md:items-start"
     >
-      <aside class="w-full md:w-64">
+      <aside class="hidden w-full md:block md:w-64">
         <section
           class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
         >
@@ -77,7 +88,7 @@
 
       <div class="flex flex-1 flex-col gap-3">
         <section
-          class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
+          class="hidden rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 md:block"
         >
           <h2
             class="mb-4 font-display text-[1.2rem] font-bold text-slate-900 dark:text-slate-100"
@@ -143,15 +154,25 @@
         </section>
 
         <section
-          class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
+          class="rounded-xl border border-gray-200 bg-white p-4 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 md:p-5"
         >
-          <h2
-            class="mb-4 font-display text-[1.2rem] font-bold text-slate-900 dark:text-slate-100"
-          >
-            &#x1F58B;&#xFE0F; Mis tareas
-          </h2>
+          <div class="mb-3 flex items-start justify-between gap-3 md:mb-0 md:block">
+            <h2
+              class="font-display text-[1.1rem] font-bold text-slate-900 dark:text-slate-100 md:mb-4 md:text-[1.2rem]"
+            >
+              &#x1F58B;&#xFE0F; Mis tareas
+            </h2>
 
-          <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center">
+            <button
+              id="mobile-complete-all-btn"
+              type="button"
+              class="rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-700 md:hidden"
+            >
+              Completar todas
+            </button>
+          </div>
+
+          <div class="hidden mb-4 flex-col gap-3 md:flex md:flex-row md:items-center">
             <div class="relative w-full md:max-w-sm">
               <label class="sr-only" for="task-search-input">Buscar tareas</label>
               <span
@@ -213,6 +234,196 @@
         </section>
       </div>
     </main>
+
+    <div id="mobile-filter-drawer" class="fixed inset-0 z-50 hidden md:hidden">
+      <button
+        id="mobile-filter-close-backdrop"
+        type="button"
+        aria-label="Cerrar filtros"
+        class="absolute inset-0 bg-slate-900/45"
+      ></button>
+      <div
+        class="absolute inset-y-0 left-0 flex w-[86vw] max-w-sm flex-col border-r border-slate-200 bg-white px-4 py-4 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="font-display text-[1.1rem] font-bold text-slate-900 dark:text-slate-100">
+            &#9881;&#65039; Men&#250;
+          </h2>
+          <button
+            id="mobile-filter-close-btn"
+            type="button"
+            aria-label="Cerrar filtros"
+            class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+          >
+            &#10005;
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-3">
+          <div class="relative w-full">
+            <label class="sr-only" for="mobile-task-search-input">Buscar tareas</label>
+            <span
+              aria-hidden="true"
+              class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-sans not-italic text-base text-slate-400 dark:text-slate-500"
+            >
+              &#128269;
+            </span>
+            <input
+              id="mobile-task-search-input"
+              type="search"
+              placeholder="Buscar tarea..."
+              autocomplete="off"
+              class="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-slate-900 italic outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+            />
+          </div>
+
+          <label class="sr-only" for="mobile-task-priority-filter">Filtrar por prioridad</label>
+          <select
+            id="mobile-task-priority-filter"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          >
+            <option value="all">Prioridad</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="baja">Baja</option>
+          </select>
+
+          <label class="sr-only" for="mobile-task-status-filter">Filtrar por estado</label>
+          <select
+            id="mobile-task-status-filter"
+            class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+          >
+            <option value="all">Todas</option>
+            <option value="open">Abiertas</option>
+            <option value="closed">Completadas</option>
+          </select>
+        </div>
+
+        <button
+          id="mobile-filter-accept-btn"
+          type="button"
+          class="mt-4 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-700"
+        >
+          Aceptar
+        </button>
+
+        <div class="my-4 h-0.5 w-full bg-slate-300 dark:bg-slate-600"></div>
+
+        <div class="min-h-0 flex-1 overflow-y-auto pt-1">
+          <h3 class="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+            Categor&#237;as
+          </h3>
+          <ul id="mobile-category-filter-list" class="flex flex-col gap-2 text-slate-900">
+            <li class="mb-1 border-b border-slate-200 pb-3 dark:border-slate-700">
+              <button
+                type="button"
+                data-category-filter="all"
+                aria-controls="task-list"
+                aria-pressed="false"
+                class="category-aside-link inline-flex w-full items-center rounded-lg px-2 py-1 text-slate-900 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+              >
+                &#x1F58B;&#xFE0F; Todas
+              </button>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <button
+      id="mobile-task-fab"
+      type="button"
+      aria-label="Crear nueva tarea"
+      class="fixed right-4 bottom-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-500 text-white shadow-xl transition hover:bg-indigo-600 md:hidden"
+    >
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        class="pointer-events-none h-8 w-8 stroke-current"
+      >
+        <path
+          d="M12 5v14M5 12h14"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2.75"
+        ></path>
+      </svg>
+    </button>
+
+    <div id="mobile-task-modal" class="fixed inset-0 z-50 hidden md:hidden">
+      <button
+        id="mobile-task-modal-backdrop"
+        type="button"
+        aria-label="Cerrar formulario"
+        class="absolute inset-0 bg-slate-900/45"
+      ></button>
+      <section
+        class="absolute right-0 bottom-0 left-0 rounded-t-3xl border border-slate-200 bg-white p-4 shadow-2xl dark:border-slate-700 dark:bg-slate-900"
+      >
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="font-display text-[1.1rem] font-bold text-slate-900 dark:text-slate-100">
+            &#128196; Nueva tarea
+          </h2>
+          <button
+            id="mobile-task-modal-close-btn"
+            type="button"
+            aria-label="Cerrar formulario"
+            class="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-lg text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+          >
+            &#10005;
+          </button>
+        </div>
+
+        <form id="mobile-task-form" novalidate class="flex flex-col gap-3">
+          <label class="sr-only" for="mobile-task-input">Nombre de la tarea</label>
+          <input
+            id="mobile-task-input"
+            name="task"
+            type="text"
+            placeholder="Tarea"
+            autocomplete="off"
+            required
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:border-transparent focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+          />
+
+          <label class="sr-only" for="mobile-category-input">Categoria</label>
+          <select
+            id="mobile-category-input"
+            name="category"
+            required
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-500"
+          ></select>
+
+          <label class="sr-only" for="mobile-priority-input">Prioridad</label>
+          <select
+            id="mobile-priority-input"
+            name="priority"
+            required
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-400 dark:border-gray-300 dark:bg-slate-800 dark:text-slate-500"
+          >
+            <option value="" selected disabled>Prioridad</option>
+            <option value="alta">Alta</option>
+            <option value="media">Media</option>
+            <option value="baja">Baja</option>
+          </select>
+
+          <button
+            type="submit"
+            class="w-full rounded-lg bg-indigo-500 px-4 py-2 font-semibold text-white transition hover:bg-indigo-600"
+          >
+            A&#241;adir
+          </button>
+
+          <p
+            id="mobile-task-form-error"
+            class="hidden text-sm font-medium text-red-600 dark:text-red-400"
+            aria-live="assertive"
+          ></p>
+        </form>
+      </section>
+    </div>
+
     <script src="app.js" defer></script>
   </body>
 </html>
