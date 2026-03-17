@@ -31,12 +31,16 @@ const TASK_CLASS_NAMES = {
       "border-slate-200 bg-slate-100 opacity-70 dark:border-slate-600 dark:bg-slate-700"
   },
   layout:
-    "grid grid-cols-[auto_4.5rem_24ch_4.5rem_auto_minmax(0,1fr)] items-center",
-  checkboxSlot: "col-start-1 flex items-center self-center",
-  textStack: "col-start-3 w-[24ch] min-w-0 grid grid-rows-2 gap-y-1",
+    "grid grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-3 items-start gap-x-3 gap-y-1 md:grid-cols-[auto_4.5rem_24ch_4.5rem_auto_minmax(0,1fr)] md:grid-rows-1 md:items-center md:gap-x-0 md:gap-y-0",
+  checkboxSlot:
+    "col-start-1 row-start-2 flex items-center self-center md:row-start-auto",
+  textStack:
+    "col-start-2 row-start-1 row-span-2 min-w-0 grid grid-rows-2 gap-y-1 md:col-start-3 md:row-start-auto md:row-span-1 md:w-[24ch]",
   textLine: "flex min-h-8 min-w-0 items-center",
-  prioritySlot: "col-start-5 flex min-h-8 items-center self-center justify-self-start",
-  actionSlot: "col-start-6 flex min-h-8 items-center justify-end self-center",
+  prioritySlot:
+    "col-start-2 row-start-3 flex min-h-8 items-center self-center justify-self-start md:col-start-5 md:row-start-auto",
+  actionSlot:
+    "col-start-3 row-start-1 row-span-3 flex min-h-8 items-stretch justify-end self-stretch md:col-start-6 md:row-start-auto md:row-span-1 md:items-center md:self-center",
   title: {
     active:
       "block min-w-0 truncate text-left text-[1.05rem] leading-6 font-semibold text-slate-900 dark:text-slate-100",
@@ -54,7 +58,7 @@ const TASK_CLASS_NAMES = {
   badge:
     "inline-flex min-h-8 w-fit shrink-0 items-center rounded-full px-3 py-1.5 text-sm font-semibold",
   actions:
-    "flex w-full shrink-0 items-center justify-end gap-1",
+    "flex h-full w-full shrink-0 flex-col-reverse items-end justify-between gap-1 md:h-auto md:flex-row md:items-center md:justify-end",
   editForm: "flex flex-col gap-2",
   editTitleInput:
     "h-7 w-full min-w-0 rounded-md border border-gray-300 px-2.5 text-[0.95rem] text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100",
@@ -63,7 +67,7 @@ const TASK_CLASS_NAMES = {
   editSelect:
     "h-8 w-full rounded-full border border-gray-300 px-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100",
   editButtons:
-    "w-full flex items-center justify-end gap-2",
+    "w-full flex h-full flex-col items-end justify-between gap-2 md:h-auto md:flex-row md:items-center md:justify-end",
   editPrimaryButton:
     "h-8 rounded-lg bg-indigo-500 px-3 text-sm font-semibold text-white transition hover:bg-indigo-600",
   editSecondaryButton:
