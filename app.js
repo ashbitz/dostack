@@ -26,7 +26,7 @@ const SUN_ICON = "\u2600\uFE0F";
 const CHECK_ICON_DATA_URI =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='white' stroke-width='2.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 10.5l3 3 7-7'/%3E%3C/svg%3E\")";
 
-const ACTIVE_NAV_CLASSES = ["bg-slate-100", "dark:bg-slate-700"];
+const ACTIVE_CATEGORY_NAV_CLASSES = ["bg-slate-100", "dark:bg-slate-700"];
 const CATEGORY_PLACEHOLDER_CLASSES = ["text-slate-400", "dark:text-slate-500"];
 const CATEGORY_VALUE_CLASSES = ["text-slate-900", "dark:text-slate-100"];
 const PRIORITY_PLACEHOLDER_CLASSES = ["text-slate-400", "dark:text-slate-500"];
@@ -114,14 +114,19 @@ const taskInput = document.querySelector("#task-input");
 const categoryInput = document.querySelector("#category-input");
 const priorityInput = document.querySelector("#priority-input");
 const taskSearchInput = document.querySelector("#task-search-input");
+const taskPriorityFilter = document.querySelector("#task-priority-filter");
+const taskStatusFilter = document.querySelector("#task-status-filter");
+const completeAllBtn = document.querySelector("#complete-all-btn");
+const categoryAsideList = document.querySelector("#category-aside-list");
 const taskFormError = document.querySelector("#task-form-error");
 const taskList = document.querySelector("#task-list");
 const themeToggle = document.querySelector("#theme-toggle");
-const filterButtons = document.querySelectorAll("[data-filter]");
 
 let tasks = [];
 let currentFilter = "all";
 let currentSearchTerm = "";
+let currentCategoryFilter = "all";
+let currentPriorityFilter = "all";
 const taskElements = new WeakMap();
 let draggedTaskId = null;
 const dragIndicator = document.createElement("div");
@@ -195,15 +200,23 @@ function normalizeCategoryValue(value) {
   return textOnlyMatch?.value ?? "";
 }
 
-function createCategoryOptions(selectElement, includePlaceholder = false) {
+function createCategoryOptions(
+  selectElement,
+  {
+    includePlaceholder = false,
+    placeholderLabel = "Categoria",
+    placeholderValue = "",
+    placeholderDisabled = true
+  } = {}
+) {
   selectElement.innerHTML = "";
 
   if (includePlaceholder) {
     const placeholderOption = document.createElement("option");
-    placeholderOption.value = "";
-    placeholderOption.disabled = true;
+    placeholderOption.value = placeholderValue;
+    placeholderOption.disabled = placeholderDisabled;
     placeholderOption.selected = true;
-    placeholderOption.textContent = "Categoria";
+    placeholderOption.textContent = placeholderLabel;
     selectElement.append(placeholderOption);
   }
 
@@ -338,15 +351,60 @@ function updateThemeButton(isDark) {
   themeToggle.setAttribute("aria-pressed", String(isDark));
 }
 
-function setActiveNav(activeButton) {
-  filterButtons.forEach((button) => {
-    button.classList.remove(...ACTIVE_NAV_CLASSES);
+function setActiveCategoryNav(activeButton) {
+  const categoryButtons = document.querySelectorAll("[data-category-filter]");
+
+  categoryButtons.forEach((button) => {
+    button.classList.remove(...ACTIVE_CATEGORY_NAV_CLASSES);
     button.setAttribute("aria-pressed", String(button === activeButton));
   });
 
   if (activeButton) {
-    activeButton.classList.add(...ACTIVE_NAV_CLASSES);
+    activeButton.classList.add(...ACTIVE_CATEGORY_NAV_CLASSES);
   }
+}
+
+function syncCategoryFilterUI() {
+  const activeCategoryButton = document.querySelector(
+    `[data-category-filter="${CSS.escape(currentCategoryFilter)}"]`
+  );
+  setActiveCategoryNav(activeCategoryButton);
+}
+
+function setCurrentCategoryFilter(category) {
+  currentCategoryFilter = category;
+  currentFilter = "all";
+  currentPriorityFilter = "all";
+  currentSearchTerm = "";
+
+  if (taskStatusFilter) {
+    taskStatusFilter.value = "all";
+  }
+
+  if (taskPriorityFilter) {
+    taskPriorityFilter.value = "all";
+  }
+
+  if (taskSearchInput) {
+    taskSearchInput.value = "";
+  }
+
+  syncCategoryFilterUI();
+  applyFilter();
+}
+
+function setCurrentFilter(filter) {
+  if (!FILTER_VALUES.has(filter)) {
+    return;
+  }
+
+  currentFilter = filter;
+
+  if (taskStatusFilter) {
+    taskStatusFilter.value = filter;
+  }
+
+  applyFilter();
 }
 
 function isTaskVisible(task) {
@@ -359,6 +417,14 @@ function isTaskVisible(task) {
   }
 
   return true;
+}
+
+function matchesCategoryFilter(task) {
+  return currentCategoryFilter === "all" || task.category === currentCategoryFilter;
+}
+
+function matchesPriorityFilter(task) {
+  return currentPriorityFilter === "all" || task.priority === currentPriorityFilter;
 }
 
 function matchesSearch(task) {
@@ -383,14 +449,23 @@ function applyFilter() {
       return;
     }
 
-    elements.article.hidden = !(isTaskVisible(task) && matchesSearch(task));
+    elements.article.hidden = !(
+      isTaskVisible(task) &&
+      matchesSearch(task) &&
+      matchesCategoryFilter(task) &&
+      matchesPriorityFilter(task)
+    );
   });
 
   updateTaskDraggability();
 }
 
 function updateTaskDraggability() {
-  const canReorderTasks = currentFilter === "all" && !currentSearchTerm;
+  const canReorderTasks =
+    currentFilter === "all" &&
+    !currentSearchTerm &&
+    currentCategoryFilter === "all" &&
+    currentPriorityFilter === "all";
 
   if (!canReorderTasks) {
     clearDragIndicator();
@@ -977,6 +1052,18 @@ function updateTaskStyle(task, elements) {
   elements.category.className = TASK_CLASS_NAMES.category[state];
 }
 
+function syncTaskCompletionState(task, elements) {
+  elements.checkbox.checked = task.completed;
+  updateCheckboxAppearance(elements.checkbox);
+
+  if (elements.article.dataset.editing === "true") {
+    updateTaskStyle({ ...task, completed: false }, elements);
+    return;
+  }
+
+  updateTaskStyle(task, elements);
+}
+
 function commitTasksChange() {
   saveTasks();
   applyFilter();
@@ -1032,8 +1119,7 @@ function attachTaskEventHandlers(task, elements) {
 
   checkbox.addEventListener("change", () => {
     task.completed = checkbox.checked;
-    updateCheckboxAppearance(checkbox);
-    updateTaskStyle(task, elements);
+    syncTaskCompletionState(task, elements);
     commitTasksChange();
   });
 
@@ -1136,26 +1222,43 @@ function renderStoredTasks() {
   applyFilter();
 }
 
-function setCurrentFilter(filter, activeButton) {
-  if (!FILTER_VALUES.has(filter)) {
+function renderCategoryAsideFilters() {
+  if (!categoryAsideList) {
     return;
   }
 
-  currentFilter = filter;
-  applyFilter();
-  setActiveNav(activeButton);
-}
+  const allCategoriesButton = categoryAsideList.querySelector(
+    '[data-category-filter="all"]'
+  );
 
-function attachFilterHandlers() {
-  filterButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      setCurrentFilter(button.dataset.filter, button);
+  if (allCategoriesButton) {
+    allCategoriesButton.addEventListener("click", () => {
+      setCurrentCategoryFilter("all");
     });
+  }
+
+  CATEGORY_OPTIONS.forEach((category) => {
+    const listItem = document.createElement("li");
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.dataset.categoryFilter = category.value;
+    button.setAttribute("aria-controls", "task-list");
+    button.setAttribute("aria-pressed", "false");
+    button.className =
+      "category-aside-link inline-flex w-full items-center rounded-lg px-2 py-1 text-slate-900 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-100";
+    button.innerHTML = category.labelHtml;
+    button.addEventListener("click", () => {
+      setCurrentCategoryFilter(category.value);
+    });
+
+    listItem.append(button);
+    categoryAsideList.append(listItem);
   });
 }
 
+renderCategoryAsideFilters();
 attachTaskListDragAndDropHandlers();
-attachFilterHandlers();
 
 const savedTheme = getStorageItem(STORAGE_KEYS.theme);
 const isDarkTheme = savedTheme === "dark";
@@ -1175,15 +1278,22 @@ themeToggle.addEventListener("click", () => {
 tasks = loadTasks();
 renderStoredTasks();
 
-setActiveNav(document.querySelector('[data-filter="all"]'));
-
 taskInput.addEventListener("input", () => setTaskFormError());
-createCategoryOptions(categoryInput, true);
+createCategoryOptions(categoryInput, { includePlaceholder: true });
 updateCategoryInputAppearance();
+syncCategoryFilterUI();
+taskStatusFilter.value = currentFilter;
 
 categoryInput.addEventListener("change", () => {
   setTaskFormError();
   updateCategoryInputAppearance();
+});
+taskPriorityFilter.addEventListener("change", () => {
+  currentPriorityFilter = taskPriorityFilter.value;
+  applyFilter();
+});
+taskStatusFilter.addEventListener("change", () => {
+  setCurrentFilter(taskStatusFilter.value);
 });
 priorityInput.addEventListener("change", () => {
   setTaskFormError();
@@ -1195,6 +1305,30 @@ updatePriorityInputAppearance();
 taskSearchInput.addEventListener("input", () => {
   currentSearchTerm = normalizeTextValue(taskSearchInput.value).toLowerCase();
   applyFilter();
+});
+
+completeAllBtn.addEventListener("click", () => {
+  let hasChanges = false;
+
+  tasks.forEach((task) => {
+    if (task.completed) {
+      return;
+    }
+
+    task.completed = true;
+    hasChanges = true;
+
+    const elements = taskElements.get(task);
+    if (elements) {
+      syncTaskCompletionState(task, elements);
+    }
+  });
+
+  if (!hasChanges) {
+    return;
+  }
+
+  commitTasksChange();
 });
 
 form.addEventListener("submit", (event) => {

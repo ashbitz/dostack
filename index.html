@@ -47,62 +47,32 @@
     <main
       class="mx-auto mt-5 mb-6 flex max-w-[1500px] flex-col gap-3 px-4 md:flex-row md:items-start md:px-0"
     >
-      <aside
-        class="w-full rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100 md:w-64"
-      >
-        <h2
-          class="mb-4 font-display text-[1.2rem] font-bold text-slate-900 dark:text-slate-100"
+      <aside class="w-full md:w-64">
+        <section
+          class="rounded-xl border border-gray-200 bg-white p-5 shadow-lg dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-100"
         >
-          &#128205; Men&#250;
-        </h2>
+          <h2
+            class="mb-4 font-display text-[1.2rem] font-bold text-slate-900 dark:text-slate-100"
+          >
+            &#9881;&#65039; Categor&#237;as
+          </h2>
 
-        <nav aria-label="Filtros de tareas">
-          <ul class="mb-2 flex flex-col gap-2 text-slate-900">
-            <li>
-              <button
-                id="nav-home"
-                data-filter="all"
-                type="button"
-                aria-controls="task-list"
-                aria-pressed="false"
-                class="aside-link inline-flex w-full items-center rounded-lg px-2 py-1 text-slate-900 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-100"
-              >
-                Mostrar todas
-              </button>
-            </li>
-            <li>
-              <button
-                id="nav-open-tasks"
-                data-filter="open"
-                type="button"
-                aria-controls="task-list"
-                aria-pressed="false"
-                class="aside-link inline-flex w-full items-center rounded-lg px-2 py-1 text-slate-900 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-100"
-              >
-                Tareas abiertas
-              </button>
-            </li>
-            <li>
-              <button
-                id="nav-closed-tasks"
-                data-filter="closed"
-                type="button"
-                aria-controls="task-list"
-                aria-pressed="false"
-                class="aside-link inline-flex w-full items-center rounded-lg px-2 py-1 text-slate-900 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-100"
-              >
-                Tareas cerradas
-              </button>
-            </li>
-            <li>
-              <span
-                class="inline-flex items-center rounded-lg px-2 py-1 text-slate-400 dark:text-slate-500"
-              >
-                Contacto
-              </span>
-            </li>
-          </ul>
-        </nav>
+          <nav aria-label="Filtros por categoria">
+            <ul id="category-aside-list" class="flex flex-col gap-2 text-slate-900">
+              <li class="mb-1 border-b border-slate-200 pb-3 dark:border-slate-700">
+                <button
+                  type="button"
+                  data-category-filter="all"
+                  aria-controls="task-list"
+                  aria-pressed="false"
+                  class="category-aside-link inline-flex w-full items-center rounded-lg px-2 py-1 text-slate-900 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-100"
+                >
+                  &#x1F58B;&#xFE0F; Todas
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </section>
       </aside>
 
       <div class="flex flex-1 flex-col gap-3">
@@ -118,7 +88,7 @@
           <form id="task-form" novalidate class="flex flex-wrap gap-3">
             <label class="sr-only" for="task-input">Nombre de la tarea</label>
             <input
-              class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              class="min-w-[220px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:border-transparent focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
               type="text"
               id="task-input"
               name="task"
@@ -129,7 +99,7 @@
 
             <label class="sr-only" for="category-input">Categoria</label>
             <select
-              class="min-w-[180px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-500"
+              class="min-w-[180px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-500"
               id="category-input"
               name="category"
               required
@@ -148,7 +118,7 @@
             <select
               id="priority-input"
               name="priority"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-gray-300 dark:bg-slate-800 dark:text-slate-500 sm:w-36"
+              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:border-transparent focus:ring-2 focus:ring-indigo-400 dark:border-gray-300 dark:bg-slate-800 dark:text-slate-500 sm:w-36"
               required
             >
               <option value="" selected disabled>Prioridad</option>
@@ -181,22 +151,58 @@
             &#x1F58B;&#xFE0F; Mis tareas
           </h2>
 
-          <div class="relative mb-4 w-full md:max-w-sm">
-            <label class="sr-only" for="task-search-input">Buscar tareas</label>
-            <span
-              aria-hidden="true"
-              class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-sans not-italic text-base text-slate-400 dark:text-slate-500"
+          <div class="mb-4 flex flex-col gap-3 md:flex-row md:items-center">
+            <div class="relative w-full md:max-w-sm">
+              <label class="sr-only" for="task-search-input">Buscar tareas</label>
+              <span
+                aria-hidden="true"
+                class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 font-sans not-italic text-base text-slate-400 dark:text-slate-500"
+              >
+                &#128269;
+              </span>
+              <input
+                id="task-search-input"
+                type="search"
+                placeholder="Buscar tarea..."
+                autocomplete="off"
+                class="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-slate-900 italic outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              />
+            </div>
+
+            <label class="sr-only" for="task-priority-filter">Filtrar por prioridad</label>
+            <select
+              id="task-priority-filter"
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
             >
-              &#128269;
-            </span>
-            <input
-              id="task-search-input"
-              type="search"
-              placeholder="Buscar tarea..."
-              autocomplete="off"
-              class="w-full rounded-lg border border-gray-300 bg-white py-2 pr-3 pl-10 text-slate-900 italic outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-            />
+              <option value="all">Prioridad</option>
+              <option value="alta">Alta</option>
+              <option value="media">Media</option>
+              <option value="baja">Baja</option>
+            </select>
+
+            <label class="sr-only" for="task-status-filter">Filtrar por estado</label>
+            <select
+              id="task-status-filter"
+              class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-slate-900 outline-none focus:ring-2 focus:ring-indigo-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 sm:w-auto"
+            >
+              <option value="all">Todas</option>
+              <option value="open">Abiertas</option>
+              <option value="closed">Completadas</option>
+            </select>
+
+            <button
+              id="complete-all-btn"
+              type="button"
+              class="w-full rounded-lg border border-slate-300 px-2.5 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-700 md:ml-auto md:w-auto md:self-end"
+            >
+              Completar todas
+            </button>
           </div>
+
+          <div
+            aria-hidden="true"
+            class="mb-4 h-px w-full bg-slate-200 dark:bg-slate-700"
+          ></div>
 
           <div
             id="task-list"
