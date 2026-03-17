@@ -128,15 +128,21 @@
             />
 
             <label class="sr-only" for="category-input">Categoria</label>
-            <input
-              class="min-w-[180px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
-              type="text"
+            <select
+              class="min-w-[180px] flex-1 rounded-lg border border-gray-300 px-3 py-2 text-slate-400 outline-none focus:ring-2 focus:ring-indigo-400 dark:bg-slate-800 dark:text-slate-500"
               id="category-input"
               name="category"
-              placeholder="Categoria"
-              autocomplete="off"
               required
-            />
+            >
+              <option value="" selected disabled>Categoria</option>
+              <option value="💼 Trabajo">&#128188; Trabajo</option>
+              <option value="🏠 Hogar">&#127968; Hogar</option>
+              <option value="📖 Estudio">&#128214; Estudio</option>
+              <option value="✈️ Ocio">&#9992;&#65039; Ocio</option>
+              <option value="👤 Personal">&#128100; Personal</option>
+              <option value="🚑 Salud">&#128657; Salud</option>
+              <option value="🌟 Otra">&#127775; Otra</option>
+            </select>
 
             <label class="sr-only" for="priority-input">Prioridad</label>
             <select

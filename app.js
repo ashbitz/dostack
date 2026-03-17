@@ -9,12 +9,26 @@ const FIELD_LIMITS = {
   min: 3,
   max: 20
 };
+const CATEGORY_OPTIONS = [
+  { value: "\u{1F4BC} Trabajo", labelHtml: "&#128188; Trabajo" },
+  { value: "\u{1F3E0} Hogar", labelHtml: "&#127968; Hogar" },
+  { value: "\u{1F4D6} Estudio", labelHtml: "&#128214; Estudio" },
+  { value: "\u2708\uFE0F Ocio", labelHtml: "&#9992;&#65039; Ocio" },
+  { value: "\u{1F464} Personal", labelHtml: "&#128100; Personal" },
+  { value: "\u{1F691} Salud", labelHtml: "&#128657; Salud" },
+  { value: "\u{1F31F} Otra", labelHtml: "&#127775; Otra" }
+];
+const VALID_CATEGORIES = new Set(
+  CATEGORY_OPTIONS.map((category) => category.value)
+);
 const MOON_ICON = "\u{1F311}";
 const SUN_ICON = "\u2600\uFE0F";
 const CHECK_ICON_DATA_URI =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='white' stroke-width='2.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 10.5l3 3 7-7'/%3E%3C/svg%3E\")";
 
 const ACTIVE_NAV_CLASSES = ["bg-slate-100", "dark:bg-slate-700"];
+const CATEGORY_PLACEHOLDER_CLASSES = ["text-slate-400", "dark:text-slate-500"];
+const CATEGORY_VALUE_CLASSES = ["text-slate-900", "dark:text-slate-100"];
 const PRIORITY_PLACEHOLDER_CLASSES = ["text-slate-400", "dark:text-slate-500"];
 const PRIORITY_VALUE_CLASSES = ["text-slate-900", "dark:text-slate-100"];
 const PRIORITY_CLASS_NAMES = {
@@ -86,9 +100,7 @@ const TASK_FIELD_MESSAGES = {
     max: "El titulo no puede superar los 20 caracteres."
   },
   category: {
-    required: "La categoria es obligatoria.",
-    min: "La categoria debe tener al menos 3 caracteres.",
-    max: "La categoria no puede superar los 20 caracteres."
+    required: "La categoria es obligatoria."
   }
 };
 
@@ -157,13 +169,59 @@ function normalizeTextValue(value) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeCategoryValue(value) {
+  const normalizedValue = normalizeTextValue(value);
+
+  if (!normalizedValue) {
+    return "";
+  }
+
+  const exactMatch = CATEGORY_OPTIONS.find(
+    (category) => category.value.toLowerCase() === normalizedValue.toLowerCase()
+  );
+  if (exactMatch) {
+    return exactMatch.value;
+  }
+
+  const textOnlyMatch = CATEGORY_OPTIONS.find((category) => {
+    const textOnlyValue = category.value
+      .replace(/^[^\p{L}\p{N}]+/u, "")
+      .trim()
+      .toLowerCase();
+
+    return textOnlyValue === normalizedValue.toLowerCase();
+  });
+
+  return textOnlyMatch?.value ?? "";
+}
+
+function createCategoryOptions(selectElement, includePlaceholder = false) {
+  selectElement.innerHTML = "";
+
+  if (includePlaceholder) {
+    const placeholderOption = document.createElement("option");
+    placeholderOption.value = "";
+    placeholderOption.disabled = true;
+    placeholderOption.selected = true;
+    placeholderOption.textContent = "Categoria";
+    selectElement.append(placeholderOption);
+  }
+
+  CATEGORY_OPTIONS.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.value;
+    option.innerHTML = category.labelHtml;
+    selectElement.append(option);
+  });
+}
+
 function normalizeTask(rawTask) {
   if (!rawTask || typeof rawTask !== "object") {
     return null;
   }
 
   const title = normalizeTextValue(rawTask.title);
-  const category = normalizeTextValue(rawTask.category);
+  const category = normalizeCategoryValue(rawTask.category);
   const rawPriority =
     typeof rawTask.priority === "string" ? rawTask.priority.toLowerCase() : "";
 
@@ -574,6 +632,16 @@ function validateTextField(value, { required, min, max }) {
   return createValidationSuccess(normalizedValue);
 }
 
+function validateCategoryField(value, { required }) {
+  const normalizedValue = normalizeCategoryValue(value);
+
+  if (!normalizedValue || !VALID_CATEGORIES.has(normalizedValue)) {
+    return createValidationError(required);
+  }
+
+  return createValidationSuccess(normalizedValue);
+}
+
 /**
  * Valida y normaliza los valores introducidos para crear una nueva tarea.
  *
@@ -589,7 +657,7 @@ function validateTaskInput(title, category, priority, excludedTaskId = null) {
     return titleResult;
   }
 
-  const categoryResult = validateTextField(
+  const categoryResult = validateCategoryField(
     category,
     TASK_FIELD_MESSAGES.category
   );
@@ -639,6 +707,18 @@ function updatePriorityInputAppearance() {
 
   PRIORITY_VALUE_CLASSES.forEach((className) => {
     priorityInput.classList.toggle(className, hasSelectedPriority);
+  });
+}
+
+function updateCategoryInputAppearance() {
+  const hasSelectedCategory = VALID_CATEGORIES.has(categoryInput.value);
+
+  CATEGORY_PLACEHOLDER_CLASSES.forEach((className) => {
+    categoryInput.classList.toggle(className, !hasSelectedCategory);
+  });
+
+  CATEGORY_VALUE_CLASSES.forEach((className) => {
+    categoryInput.classList.toggle(className, hasSelectedCategory);
   });
 }
 
@@ -771,14 +851,13 @@ function createTaskElement(task) {
   const category = document.createElement("span");
   category.textContent = task.category;
 
-  const editCategoryInput = document.createElement("input");
-  editCategoryInput.type = "text";
-  editCategoryInput.value = task.category;
+  const editCategoryInput = document.createElement("select");
   editCategoryInput.className = TASK_CLASS_NAMES.editCategoryInput;
-  editCategoryInput.autocomplete = "off";
   editCategoryInput.required = true;
   editCategoryInput.setAttribute("aria-label", `Editar categoria de ${task.title}`);
   editCategoryInput.hidden = true;
+  createCategoryOptions(editCategoryInput);
+  editCategoryInput.value = task.category;
 
   const prioritySlot = document.createElement("div");
   prioritySlot.className = TASK_CLASS_NAMES.prioritySlot;
@@ -979,7 +1058,7 @@ function attachTaskEventHandlers(task, elements) {
   });
 
   editTitleInput.addEventListener("input", () => setTaskEditError(elements));
-  editCategoryInput.addEventListener("input", () => setTaskEditError(elements));
+  editCategoryInput.addEventListener("change", () => setTaskEditError(elements));
   editPriorityInput.addEventListener("change", () => setTaskEditError(elements));
 
   editForm.addEventListener("submit", (event) => {
@@ -1099,7 +1178,13 @@ renderStoredTasks();
 setActiveNav(document.querySelector('[data-filter="all"]'));
 
 taskInput.addEventListener("input", () => setTaskFormError());
-categoryInput.addEventListener("input", () => setTaskFormError());
+createCategoryOptions(categoryInput, true);
+updateCategoryInputAppearance();
+
+categoryInput.addEventListener("change", () => {
+  setTaskFormError();
+  updateCategoryInputAppearance();
+});
 priorityInput.addEventListener("change", () => {
   setTaskFormError();
   updatePriorityInputAppearance();
@@ -1149,6 +1234,7 @@ form.addEventListener("submit", (event) => {
   taskInput.value = "";
   categoryInput.value = "";
   priorityInput.value = "";
+  updateCategoryInputAppearance();
   updatePriorityInputAppearance();
   taskInput.focus();
 });
