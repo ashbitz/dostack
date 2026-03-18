@@ -144,6 +144,16 @@ const taskSortToggleBtn = document.querySelector("#task-sort-toggle-btn");
 const taskSortMenu = document.querySelector("#task-sort-menu");
 const completeAllBtn = document.querySelector("#complete-all-btn");
 const categoryAsideList = document.querySelector("#category-aside-list");
+const statsTotalCount = document.querySelector("#stats-total-count");
+const statsOpenCount = document.querySelector("#stats-open-count");
+const statsClosedCount = document.querySelector("#stats-closed-count");
+const statsCompletionPercentage = document.querySelector(
+  "#stats-completion-percentage"
+);
+const statsCompletionBar = document.querySelector("#stats-completion-bar");
+const mobileStatsOpenCount = document.querySelector("#mobile-stats-open-count");
+const mobileStatsClosedCount = document.querySelector("#mobile-stats-closed-count");
+const mobileStatsTotalCount = document.querySelector("#mobile-stats-total-count");
 const mobileMenuToggle = document.querySelector("#mobile-menu-toggle");
 const mobileFilterDrawer = document.querySelector("#mobile-filter-drawer");
 const mobileFilterCloseBtn = document.querySelector("#mobile-filter-close-btn");
@@ -398,6 +408,46 @@ function updateThemeButton(isDark) {
     isDark ? "Activar modo claro" : "Activar modo oscuro"
   );
   themeToggle.setAttribute("aria-pressed", String(isDark));
+}
+
+function updateTaskStatistics() {
+  const totalTasks = tasks.length;
+  const closedTasks = tasks.filter((task) => task.completed).length;
+  const openTasks = totalTasks - closedTasks;
+  const completionPercentage =
+    totalTasks === 0 ? 0 : Math.round((closedTasks / totalTasks) * 100);
+
+  if (statsTotalCount) {
+    statsTotalCount.textContent = String(totalTasks);
+  }
+
+  if (statsOpenCount) {
+    statsOpenCount.textContent = String(openTasks);
+  }
+
+  if (statsClosedCount) {
+    statsClosedCount.textContent = String(closedTasks);
+  }
+
+  if (statsCompletionPercentage) {
+    statsCompletionPercentage.textContent = `${completionPercentage}%`;
+  }
+
+  if (statsCompletionBar) {
+    statsCompletionBar.style.width = `${completionPercentage}%`;
+  }
+
+  if (mobileStatsOpenCount) {
+    mobileStatsOpenCount.textContent = String(openTasks);
+  }
+
+  if (mobileStatsClosedCount) {
+    mobileStatsClosedCount.textContent = String(closedTasks);
+  }
+
+  if (mobileStatsTotalCount) {
+    mobileStatsTotalCount.textContent = String(totalTasks);
+  }
 }
 
 function isDesktopViewport() {
@@ -1399,6 +1449,7 @@ function syncTaskCompletionState(task, elements) {
 
 function commitTasksChange() {
   saveTasks();
+  updateTaskStatistics();
   applyFilter();
 }
 
@@ -1592,6 +1643,7 @@ function submitNewTask({
 
   tasks.push(newTask);
   saveTasks();
+  updateTaskStatistics();
   addTaskToDOM(newTask);
   onSuccess?.();
 }
@@ -1659,6 +1711,7 @@ themeToggle.addEventListener("click", () => {
 });
 
 tasks = loadTasks();
+updateTaskStatistics();
 renderStoredTasks();
 
 taskInput.addEventListener("input", () => setTaskFormError());
