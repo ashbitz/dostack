@@ -1143,11 +1143,6 @@
       padding: calc(var(--spacing) * 5);
     }
   }
-  .md\:px-0 {
-    @media (width >= 48rem) {
-      padding-inline: calc(var(--spacing) * 0);
-    }
-  }
   .md\:px-3 {
     @media (width >= 48rem) {
       padding-inline: calc(var(--spacing) * 3);
@@ -1177,6 +1172,16 @@
   .md\:text-\[1\.2rem\] {
     @media (width >= 48rem) {
       font-size: 1.2rem;
+    }
+  }
+  .xl\:max-w-\[1580px\] {
+    @media (width >= 80rem) {
+      max-width: 1580px;
+    }
+  }
+  .\32 xl\:max-w-\[1660px\] {
+    @media (width >= 96rem) {
+      max-width: 1660px;
     }
   }
   .dark\:border-gray-300 {
