@@ -148,12 +148,15 @@ const mobileMenuToggle = document.querySelector("#mobile-menu-toggle");
 const mobileFilterDrawer = document.querySelector("#mobile-filter-drawer");
 const mobileFilterCloseBtn = document.querySelector("#mobile-filter-close-btn");
 const mobileFilterCloseBackdrop = document.querySelector("#mobile-filter-close-backdrop");
+const mobileFilterClearBtn = document.querySelector("#mobile-filter-clear-btn");
 const mobileFilterAcceptBtn = document.querySelector("#mobile-filter-accept-btn");
 const mobileTaskSearchInput = document.querySelector("#mobile-task-search-input");
 const mobileTaskPriorityFilter = document.querySelector("#mobile-task-priority-filter");
 const mobileTaskStatusFilter = document.querySelector("#mobile-task-status-filter");
 const mobileCategoryFilterList = document.querySelector("#mobile-category-filter-list");
 const mobileCompleteAllBtn = document.querySelector("#mobile-complete-all-btn");
+const mobileTaskSortToggleBtn = document.querySelector("#mobile-task-sort-toggle-btn");
+const mobileTaskSortMenu = document.querySelector("#mobile-task-sort-menu");
 const mobileTaskFab = document.querySelector("#mobile-task-fab");
 const mobileTaskModal = document.querySelector("#mobile-task-modal");
 const mobileTaskModalCloseBtn = document.querySelector("#mobile-task-modal-close-btn");
@@ -172,6 +175,7 @@ let tasks = [];
 let desktopViewState = { ...DEFAULT_VIEW_STATE };
 let mobileViewState = { ...DEFAULT_VIEW_STATE };
 let desktopSortMode = "manual";
+let mobileSortMode = "manual";
 const taskElements = new WeakMap();
 let draggedTaskId = null;
 const dragIndicator = document.createElement("div");
@@ -528,15 +532,23 @@ function setViewSearchTerm(surface, searchTerm) {
   applyFilter();
 }
 
-function clearDesktopFilters() {
-  desktopViewState = {
+function clearViewFilters(surface) {
+  setViewState(surface, {
     ...DEFAULT_VIEW_STATE
-  };
-  syncStatusFilterUI("desktop");
-  syncPriorityFilterUI("desktop");
-  syncSearchUI("desktop");
-  syncCategoryFilterUI("desktop");
+  });
+  syncStatusFilterUI(surface);
+  syncPriorityFilterUI(surface);
+  syncSearchUI(surface);
+  syncCategoryFilterUI(surface);
   applyFilter();
+}
+
+function clearDesktopFilters() {
+  clearViewFilters("desktop");
+}
+
+function clearMobileFilters() {
+  clearViewFilters("mobile");
 }
 
 function isTaskVisible(task, viewState) {
@@ -612,10 +624,19 @@ function getManualOrderedTasks() {
   return [...tasks].reverse();
 }
 
+function getSortModeForSurface(surface) {
+  return surface === "desktop" ? desktopSortMode : mobileSortMode;
+}
+
+function getActiveSortMode() {
+  return getSortModeForSurface(isDesktopViewport() ? "desktop" : "mobile");
+}
+
 function getOrderedTasksForDisplay() {
   const manualOrderedTasks = getManualOrderedTasks();
+  const activeSortMode = getActiveSortMode();
 
-  if (!isDesktopViewport() || desktopSortMode === "manual") {
+  if (activeSortMode === "manual") {
     return manualOrderedTasks;
   }
 
@@ -626,13 +647,13 @@ function getOrderedTasksForDisplay() {
   return [...manualOrderedTasks].sort((firstTask, secondTask) => {
     let comparisonResult = 0;
 
-    if (desktopSortMode === "alphabetical") {
+    if (activeSortMode === "alphabetical") {
       comparisonResult = compareTextValues(firstTask.title, secondTask.title);
-    } else if (desktopSortMode === "category") {
+    } else if (activeSortMode === "category") {
       comparisonResult =
         compareTextValues(firstTask.category, secondTask.category) ||
         compareTextValues(firstTask.title, secondTask.title);
-    } else if (desktopSortMode === "priority") {
+    } else if (activeSortMode === "priority") {
       comparisonResult =
         PRIORITY_SORT_WEIGHT[firstTask.priority] -
           PRIORITY_SORT_WEIGHT[secondTask.priority] ||
@@ -655,7 +676,7 @@ function canReorderTasksInCurrentView() {
     !activeViewState.searchTerm &&
     activeViewState.categoryFilter === "all" &&
     activeViewState.priorityFilter === "all" &&
-    (!isDesktopViewport() || desktopSortMode === "manual")
+    getActiveSortMode() === "manual"
   );
 }
 
@@ -808,7 +829,7 @@ function finalizeDraggedTaskPosition() {
  *    persistir el nuevo orden.
  *
  * La reordenacion solo se mantiene disponible cuando la vista activa esta sin
- * filtros y, en desktop, cuando el modo de ordenacion es `manual`.
+ * filtros y el modo de ordenacion actual es `manual`.
  *
  * @returns {void}
  */
@@ -879,27 +900,27 @@ function setFormError(element, message = "") {
   element.classList.toggle("hidden", !message);
 }
 
-function setTaskSortMenuOpen(isOpen) {
-  if (!taskSortMenu || !taskSortToggleBtn) {
+function setSortMenuOpen(toggleButton, menu, isOpen) {
+  if (!toggleButton || !menu) {
     return;
   }
 
-  taskSortMenu.classList.toggle("hidden", !isOpen);
-  taskSortToggleBtn.setAttribute("aria-expanded", String(isOpen));
+  menu.classList.toggle("hidden", !isOpen);
+  toggleButton.setAttribute("aria-expanded", String(isOpen));
 }
 
-function syncDesktopSortUI() {
-  if (!taskSortToggleBtn || !taskSortMenu) {
+function syncSortUI(toggleButton, menu, sortMode) {
+  if (!toggleButton || !menu) {
     return;
   }
 
-  const currentSortLabel = SORT_MODE_LABELS[desktopSortMode] ?? SORT_MODE_LABELS.manual;
+  const currentSortLabel = SORT_MODE_LABELS[sortMode] ?? SORT_MODE_LABELS.manual;
 
-  taskSortToggleBtn.setAttribute("aria-label", `Ordenar tareas: ${currentSortLabel}`);
-  taskSortToggleBtn.title = `Orden actual: ${currentSortLabel}`;
+  toggleButton.setAttribute("aria-label", `Ordenar tareas: ${currentSortLabel}`);
+  toggleButton.title = `Orden actual: ${currentSortLabel}`;
 
-  taskSortMenu.querySelectorAll("[data-sort-mode]").forEach((button) => {
-    const isActive = button.dataset.sortMode === desktopSortMode;
+  menu.querySelectorAll("[data-sort-mode]").forEach((button) => {
+    const isActive = button.dataset.sortMode === sortMode;
     button.classList.toggle("bg-slate-100", isActive);
     button.classList.toggle("dark:bg-slate-700", isActive);
     button.classList.toggle("font-semibold", isActive);
@@ -907,14 +928,44 @@ function syncDesktopSortUI() {
   });
 }
 
-function setDesktopSortMode(sortMode) {
+function setTaskSortMenuOpen(isOpen) {
+  setSortMenuOpen(taskSortToggleBtn, taskSortMenu, isOpen);
+}
+
+function setMobileTaskSortMenuOpen(isOpen) {
+  setSortMenuOpen(mobileTaskSortToggleBtn, mobileTaskSortMenu, isOpen);
+}
+
+function syncDesktopSortUI() {
+  syncSortUI(taskSortToggleBtn, taskSortMenu, desktopSortMode);
+}
+
+function syncMobileSortUI() {
+  syncSortUI(mobileTaskSortToggleBtn, mobileTaskSortMenu, mobileSortMode);
+}
+
+function setSortModeForSurface(surface, sortMode) {
   if (!SORT_MODE_VALUES.has(sortMode)) {
     return;
   }
 
-  desktopSortMode = sortMode;
-  syncDesktopSortUI();
+  if (surface === "desktop") {
+    desktopSortMode = sortMode;
+    syncDesktopSortUI();
+  } else {
+    mobileSortMode = sortMode;
+    syncMobileSortUI();
+  }
+
   applyFilter();
+}
+
+function setDesktopSortMode(sortMode) {
+  setSortModeForSurface("desktop", sortMode);
+}
+
+function setMobileSortMode(sortMode) {
+  setSortModeForSurface("mobile", sortMode);
 }
 
 function updateMobileOverlayLock() {
@@ -930,6 +981,10 @@ function setMobileFilterDrawerOpen(isOpen) {
     return;
   }
 
+  if (isOpen) {
+    setMobileTaskSortMenuOpen(false);
+  }
+
   mobileFilterDrawer.classList.toggle("hidden", !isOpen);
   mobileMenuToggle.setAttribute("aria-expanded", String(isOpen));
   updateMobileOverlayLock();
@@ -942,6 +997,7 @@ function setMobileTaskModalOpen(isOpen) {
 
   if (isOpen) {
     setMobileFilterDrawerOpen(false);
+    setMobileTaskSortMenuOpen(false);
     setFormError(mobileTaskFormError);
   }
 
@@ -1618,6 +1674,7 @@ syncPriorityFilterUI("mobile");
 syncSearchUI("desktop");
 syncSearchUI("mobile");
 syncDesktopSortUI();
+syncMobileSortUI();
 
 categoryInput.addEventListener("change", () => {
   setTaskFormError();
@@ -1685,6 +1742,7 @@ function completeAllTasks() {
 desktopClearFiltersBtn?.addEventListener("click", () => clearDesktopFilters());
 completeAllBtn.addEventListener("click", () => completeAllTasks());
 mobileCompleteAllBtn.addEventListener("click", () => completeAllTasks());
+mobileFilterClearBtn?.addEventListener("click", () => clearMobileFilters());
 
 taskSortToggleBtn?.addEventListener("click", (event) => {
   event.stopPropagation();
@@ -1698,31 +1756,56 @@ taskSortMenu?.querySelectorAll("[data-sort-mode]").forEach((button) => {
   });
 });
 
-document.addEventListener("click", (event) => {
-  if (!taskSortMenu || !taskSortToggleBtn) {
-    return;
-  }
+mobileTaskSortToggleBtn?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setMobileTaskSortMenuOpen(
+    mobileTaskSortMenu?.classList.contains("hidden") ?? true
+  );
+});
 
+mobileTaskSortMenu?.querySelectorAll("[data-sort-mode]").forEach((button) => {
+  button.addEventListener("click", () => {
+    setMobileSortMode(button.dataset.sortMode);
+    setMobileTaskSortMenuOpen(false);
+  });
+});
+
+document.addEventListener("click", (event) => {
   const target = event.target;
 
-  if (
-    target instanceof Node &&
-    (taskSortMenu.contains(target) || taskSortToggleBtn.contains(target))
-  ) {
-    return;
+  if (target instanceof Node) {
+    if (
+      taskSortMenu &&
+      taskSortToggleBtn &&
+      (taskSortMenu.contains(target) || taskSortToggleBtn.contains(target))
+    ) {
+      return;
+    }
+
+    if (
+      mobileTaskSortMenu &&
+      mobileTaskSortToggleBtn &&
+      (mobileTaskSortMenu.contains(target) ||
+        mobileTaskSortToggleBtn.contains(target))
+    ) {
+      return;
+    }
   }
 
   setTaskSortMenuOpen(false);
+  setMobileTaskSortMenuOpen(false);
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     setTaskSortMenuOpen(false);
+    setMobileTaskSortMenuOpen(false);
   }
 });
 
 desktopBreakpoint.addEventListener("change", () => {
   setTaskSortMenuOpen(false);
+  setMobileTaskSortMenuOpen(false);
   applyFilter();
 });
 

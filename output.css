@@ -331,6 +331,9 @@
   .mt-4 {
     margin-top: calc(var(--spacing) * 4);
   }
+  .mt-5 {
+    margin-top: calc(var(--spacing) * 5);
+  }
   .mr-2 {
     margin-right: calc(var(--spacing) * 2);
   }
@@ -391,6 +394,9 @@
   .h-\[1\.35rem\] {
     height: 1.35rem;
   }
+  .h-\[1\.125rem\] {
+    height: 1.125rem;
+  }
   .h-full {
     height: 100%;
   }
@@ -423,6 +429,9 @@
   }
   .w-\[1\.35rem\] {
     width: 1.35rem;
+  }
+  .w-\[1\.125rem\] {
+    width: 1.125rem;
   }
   .w-\[86vw\] {
     width: 86vw;
@@ -696,6 +705,9 @@
   }
   .pb-3 {
     padding-bottom: calc(var(--spacing) * 3);
+  }
+  .pb-20 {
+    padding-bottom: calc(var(--spacing) * 20);
   }
   .pl-10 {
     padding-left: calc(var(--spacing) * 10);
