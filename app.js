@@ -106,7 +106,7 @@ const TASK_CLASS_NAMES = {
   editButtons:
     "w-full flex h-full flex-col items-end justify-between gap-2 md:h-auto md:flex-row md:items-center md:justify-end",
   editPrimaryButton:
-    "h-8 rounded-lg bg-indigo-500 px-3 text-sm font-semibold text-white transition hover:bg-indigo-600",
+    "h-8 rounded-lg bg-gradient-to-r from-indigo-500 via-indigo-600 to-indigo-700 px-3 text-sm font-semibold text-white transition hover:brightness-110",
   editSecondaryButton:
     "h-8 rounded-lg border border-slate-300 px-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-700",
   editError: "text-sm font-medium text-red-600 dark:text-red-400",
