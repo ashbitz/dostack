@@ -5,6 +5,29 @@ const STORAGE_KEYS = {
 
 const VALID_PRIORITIES = new Set(["alta", "media", "baja"]);
 const FILTER_VALUES = new Set(["all", "open", "closed"]);
+const SORT_MODE_VALUES = new Set([
+  "manual",
+  "alphabetical",
+  "category",
+  "priority"
+]);
+const SORT_MODE_LABELS = {
+  manual: "Manual",
+  alphabetical: "Alfabético A-Z",
+  category: "Categoría",
+  priority: "Prioridad"
+};
+const PRIORITY_SORT_WEIGHT = {
+  alta: 0,
+  media: 1,
+  baja: 2
+};
+const DEFAULT_VIEW_STATE = Object.freeze({
+  statusFilter: "all",
+  searchTerm: "",
+  categoryFilter: "all",
+  priorityFilter: "all"
+});
 const FIELD_LIMITS = {
   min: 3,
   max: 20
@@ -116,6 +139,9 @@ const priorityInput = document.querySelector("#priority-input");
 const taskSearchInput = document.querySelector("#task-search-input");
 const taskPriorityFilter = document.querySelector("#task-priority-filter");
 const taskStatusFilter = document.querySelector("#task-status-filter");
+const desktopClearFiltersBtn = document.querySelector("#desktop-clear-filters-btn");
+const taskSortToggleBtn = document.querySelector("#task-sort-toggle-btn");
+const taskSortMenu = document.querySelector("#task-sort-menu");
 const completeAllBtn = document.querySelector("#complete-all-btn");
 const categoryAsideList = document.querySelector("#category-aside-list");
 const mobileMenuToggle = document.querySelector("#mobile-menu-toggle");
@@ -140,12 +166,12 @@ const mobileTaskFormError = document.querySelector("#mobile-task-form-error");
 const taskFormError = document.querySelector("#task-form-error");
 const taskList = document.querySelector("#task-list");
 const themeToggle = document.querySelector("#theme-toggle");
+const desktopBreakpoint = window.matchMedia("(min-width: 768px)");
 
 let tasks = [];
-let currentFilter = "all";
-let currentSearchTerm = "";
-let currentCategoryFilter = "all";
-let currentPriorityFilter = "all";
+let desktopViewState = { ...DEFAULT_VIEW_STATE };
+let mobileViewState = { ...DEFAULT_VIEW_STATE };
+let desktopSortMode = "manual";
 const taskElements = new WeakMap();
 let draggedTaskId = null;
 const dragIndicator = document.createElement("div");
@@ -370,87 +396,180 @@ function updateThemeButton(isDark) {
   themeToggle.setAttribute("aria-pressed", String(isDark));
 }
 
-function setActiveCategoryNav(activeButton) {
-  const categoryButtons = document.querySelectorAll("[data-category-filter]");
+function isDesktopViewport() {
+  return desktopBreakpoint.matches;
+}
+
+function getViewState(surface) {
+  return surface === "desktop" ? desktopViewState : mobileViewState;
+}
+
+function getActiveViewState() {
+  return getViewState(isDesktopViewport() ? "desktop" : "mobile");
+}
+
+function setViewState(surface, nextState) {
+  if (surface === "desktop") {
+    desktopViewState = nextState;
+    return;
+  }
+
+  mobileViewState = nextState;
+}
+
+function setActiveCategoryNav(container, activeCategoryFilter) {
+  if (!container) {
+    return;
+  }
+
+  const categoryButtons = container.querySelectorAll("[data-category-filter]");
 
   categoryButtons.forEach((button) => {
-    button.classList.remove(...ACTIVE_CATEGORY_NAV_CLASSES);
-    button.setAttribute("aria-pressed", String(button === activeButton));
+    const isActive = button.dataset.categoryFilter === activeCategoryFilter;
+    button.classList.toggle(ACTIVE_CATEGORY_NAV_CLASSES[0], isActive);
+    button.classList.toggle(ACTIVE_CATEGORY_NAV_CLASSES[1], isActive);
+    button.setAttribute("aria-pressed", String(isActive));
   });
+}
 
-  if (activeButton) {
-    activeButton.classList.add(...ACTIVE_CATEGORY_NAV_CLASSES);
+function syncCategoryFilterUI(surface) {
+  const categoryFilter = getViewState(surface).categoryFilter;
+
+  if (surface === "desktop") {
+    setActiveCategoryNav(categoryAsideList, categoryFilter);
+    return;
+  }
+
+  setActiveCategoryNav(mobileCategoryFilterList, categoryFilter);
+}
+
+function syncSearchUI(surface) {
+  const { searchTerm } = getViewState(surface);
+
+  if (surface === "desktop" && taskSearchInput) {
+    taskSearchInput.value = searchTerm;
+    return;
+  }
+
+  if (surface === "mobile" && mobileTaskSearchInput) {
+    mobileTaskSearchInput.value = searchTerm;
   }
 }
 
-function syncCategoryFilterUI() {
-  const activeCategoryButton = document.querySelector(
-    `[data-category-filter="${CSS.escape(currentCategoryFilter)}"]`
-  );
-  setActiveCategoryNav(activeCategoryButton);
+function syncPriorityFilterUI(surface) {
+  const { priorityFilter } = getViewState(surface);
+
+  if (surface === "desktop" && taskPriorityFilter) {
+    taskPriorityFilter.value = priorityFilter;
+    return;
+  }
+
+  if (surface === "mobile" && mobileTaskPriorityFilter) {
+    mobileTaskPriorityFilter.value = priorityFilter;
+  }
 }
 
-function setCurrentCategoryFilter(category) {
-  currentCategoryFilter = category;
-  currentFilter = "all";
-  currentPriorityFilter = "all";
-  currentSearchTerm = "";
-  syncStatusFilterUI();
-  syncPriorityFilterUI();
-  syncSearchUI();
-  syncCategoryFilterUI();
+function syncStatusFilterUI(surface) {
+  const { statusFilter } = getViewState(surface);
+
+  if (surface === "desktop" && taskStatusFilter) {
+    taskStatusFilter.value = statusFilter;
+    return;
+  }
+
+  if (surface === "mobile" && mobileTaskStatusFilter) {
+    mobileTaskStatusFilter.value = statusFilter;
+  }
+}
+
+function setViewCategoryFilter(surface, category) {
+  setViewState(surface, {
+    ...getViewState(surface),
+    categoryFilter: category,
+    statusFilter: "all",
+    priorityFilter: "all",
+    searchTerm: ""
+  });
+  syncStatusFilterUI(surface);
+  syncPriorityFilterUI(surface);
+  syncSearchUI(surface);
+  syncCategoryFilterUI(surface);
   applyFilter();
 }
 
-function setCurrentFilter(filter) {
+function setViewStatusFilter(surface, filter) {
   if (!FILTER_VALUES.has(filter)) {
     return;
   }
 
-  currentFilter = filter;
-  syncStatusFilterUI();
+  setViewState(surface, {
+    ...getViewState(surface),
+    statusFilter: filter
+  });
+  syncStatusFilterUI(surface);
   applyFilter();
 }
 
-function setCurrentPriorityFilter(priority) {
-  currentPriorityFilter = priority;
-  syncPriorityFilterUI();
+function setViewPriorityFilter(surface, priority) {
+  setViewState(surface, {
+    ...getViewState(surface),
+    priorityFilter: priority
+  });
+  syncPriorityFilterUI(surface);
   applyFilter();
 }
 
-function setCurrentSearchTerm(searchTerm) {
-  currentSearchTerm = searchTerm;
-  syncSearchUI();
+function setViewSearchTerm(surface, searchTerm) {
+  setViewState(surface, {
+    ...getViewState(surface),
+    searchTerm
+  });
+  syncSearchUI(surface);
   applyFilter();
 }
 
-function isTaskVisible(task) {
-  if (currentFilter === "open") {
+function clearDesktopFilters() {
+  desktopViewState = {
+    ...DEFAULT_VIEW_STATE
+  };
+  syncStatusFilterUI("desktop");
+  syncPriorityFilterUI("desktop");
+  syncSearchUI("desktop");
+  syncCategoryFilterUI("desktop");
+  applyFilter();
+}
+
+function isTaskVisible(task, viewState) {
+  if (viewState.statusFilter === "open") {
     return !task.completed;
   }
 
-  if (currentFilter === "closed") {
+  if (viewState.statusFilter === "closed") {
     return task.completed;
   }
 
   return true;
 }
 
-function matchesCategoryFilter(task) {
-  return currentCategoryFilter === "all" || task.category === currentCategoryFilter;
+function matchesCategoryFilter(task, viewState) {
+  return (
+    viewState.categoryFilter === "all" || task.category === viewState.categoryFilter
+  );
 }
 
-function matchesPriorityFilter(task) {
-  return currentPriorityFilter === "all" || task.priority === currentPriorityFilter;
+function matchesPriorityFilter(task, viewState) {
+  return (
+    viewState.priorityFilter === "all" || task.priority === viewState.priorityFilter
+  );
 }
 
-function matchesSearch(task) {
-  if (!currentSearchTerm) {
+function matchesSearch(task, viewState) {
+  if (!viewState.searchTerm) {
     return true;
   }
 
   return [task.title, task.category].some((value) =>
-    value.toLowerCase().includes(currentSearchTerm)
+    value.toLowerCase().includes(viewState.searchTerm)
   );
 }
 
@@ -460,29 +579,88 @@ function matchesSearch(task) {
  * @returns {void}
  */
 function applyFilter() {
-  tasks.forEach((task) => {
+  const activeViewState = getActiveViewState();
+  const orderedTasks = getOrderedTasksForDisplay();
+
+  orderedTasks.forEach((task) => {
     const elements = taskElements.get(task);
     if (!elements) {
       return;
     }
 
     elements.article.hidden = !(
-      isTaskVisible(task) &&
-      matchesSearch(task) &&
-      matchesCategoryFilter(task) &&
-      matchesPriorityFilter(task)
+      isTaskVisible(task, activeViewState) &&
+      matchesSearch(task, activeViewState) &&
+      matchesCategoryFilter(task, activeViewState) &&
+      matchesPriorityFilter(task, activeViewState)
     );
+    taskList.append(elements.article);
   });
 
   updateTaskDraggability();
 }
 
+function compareTextValues(firstValue, secondValue) {
+  return firstValue.localeCompare(secondValue, "es", { sensitivity: "base" });
+}
+
+function compareTasksByManualOrder(firstTask, secondTask, manualOrderById) {
+  return manualOrderById.get(firstTask.id) - manualOrderById.get(secondTask.id);
+}
+
+function getManualOrderedTasks() {
+  return [...tasks].reverse();
+}
+
+function getOrderedTasksForDisplay() {
+  const manualOrderedTasks = getManualOrderedTasks();
+
+  if (!isDesktopViewport() || desktopSortMode === "manual") {
+    return manualOrderedTasks;
+  }
+
+  const manualOrderById = new Map(
+    manualOrderedTasks.map((task, index) => [task.id, index])
+  );
+
+  return [...manualOrderedTasks].sort((firstTask, secondTask) => {
+    let comparisonResult = 0;
+
+    if (desktopSortMode === "alphabetical") {
+      comparisonResult = compareTextValues(firstTask.title, secondTask.title);
+    } else if (desktopSortMode === "category") {
+      comparisonResult =
+        compareTextValues(firstTask.category, secondTask.category) ||
+        compareTextValues(firstTask.title, secondTask.title);
+    } else if (desktopSortMode === "priority") {
+      comparisonResult =
+        PRIORITY_SORT_WEIGHT[firstTask.priority] -
+          PRIORITY_SORT_WEIGHT[secondTask.priority] ||
+        compareTextValues(firstTask.title, secondTask.title);
+    }
+
+    if (comparisonResult !== 0) {
+      return comparisonResult;
+    }
+
+    return compareTasksByManualOrder(firstTask, secondTask, manualOrderById);
+  });
+}
+
+function canReorderTasksInCurrentView() {
+  const activeViewState = getActiveViewState();
+
+  return (
+    activeViewState.statusFilter === "all" &&
+    !activeViewState.searchTerm &&
+    activeViewState.categoryFilter === "all" &&
+    activeViewState.priorityFilter === "all" &&
+    (!isDesktopViewport() || desktopSortMode === "manual")
+  );
+}
+
 function updateTaskDraggability() {
-  const canReorderTasks =
-    currentFilter === "all" &&
-    !currentSearchTerm &&
-    currentCategoryFilter === "all" &&
-    currentPriorityFilter === "all";
+  const canReorderTasks = canReorderTasksInCurrentView();
 
   if (!canReorderTasks) {
     clearDragIndicator();
@@ -629,14 +807,18 @@ function finalizeDraggedTaskPosition() {
  *    `finalizeDraggedTaskPosition()` para mover el nodo, limpiar el indicador y
  *    persistir el nuevo orden.
  *
- * La reordenacion solo esta habilitada cuando el filtro activo es `all`, para
- * evitar inconsistencias al intentar ordenar una lista parcialmente oculta.
+ * La reordenacion solo se mantiene disponible cuando la vista activa esta sin
+ * filtros y, en desktop, cuando el modo de ordenacion es `manual`.
  *
  * @returns {void}
  */
 function attachTaskListDragAndDropHandlers() {
   taskList.addEventListener("dragover", (event) => {
-    if (currentFilter !== "all" || !draggedTaskId || !getTaskById(draggedTaskId)) {
+    if (
+      !canReorderTasksInCurrentView() ||
+      !draggedTaskId ||
+      !getTaskById(draggedTaskId)
+    ) {
       return;
     }
 
@@ -645,7 +827,7 @@ function attachTaskListDragAndDropHandlers() {
   });
 
   taskList.addEventListener("drop", (event) => {
-    if (currentFilter !== "all" || !draggedTaskId) {
+    if (!canReorderTasksInCurrentView() || !draggedTaskId) {
       return;
     }
 
@@ -697,34 +879,42 @@ function setFormError(element, message = "") {
   element.classList.toggle("hidden", !message);
 }
 
-function syncSearchUI() {
-  if (taskSearchInput) {
-    taskSearchInput.value = currentSearchTerm;
+function setTaskSortMenuOpen(isOpen) {
+  if (!taskSortMenu || !taskSortToggleBtn) {
+    return;
   }
 
-  if (mobileTaskSearchInput) {
-    mobileTaskSearchInput.value = currentSearchTerm;
-  }
+  taskSortMenu.classList.toggle("hidden", !isOpen);
+  taskSortToggleBtn.setAttribute("aria-expanded", String(isOpen));
 }
 
-function syncPriorityFilterUI() {
-  if (taskPriorityFilter) {
-    taskPriorityFilter.value = currentPriorityFilter;
+function syncDesktopSortUI() {
+  if (!taskSortToggleBtn || !taskSortMenu) {
+    return;
   }
 
-  if (mobileTaskPriorityFilter) {
-    mobileTaskPriorityFilter.value = currentPriorityFilter;
-  }
+  const currentSortLabel = SORT_MODE_LABELS[desktopSortMode] ?? SORT_MODE_LABELS.manual;
+
+  taskSortToggleBtn.setAttribute("aria-label", `Ordenar tareas: ${currentSortLabel}`);
+  taskSortToggleBtn.title = `Orden actual: ${currentSortLabel}`;
+
+  taskSortMenu.querySelectorAll("[data-sort-mode]").forEach((button) => {
+    const isActive = button.dataset.sortMode === desktopSortMode;
+    button.classList.toggle("bg-slate-100", isActive);
+    button.classList.toggle("dark:bg-slate-700", isActive);
+    button.classList.toggle("font-semibold", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
 }
 
-function syncStatusFilterUI() {
-  if (taskStatusFilter) {
-    taskStatusFilter.value = currentFilter;
+function setDesktopSortMode(sortMode) {
+  if (!SORT_MODE_VALUES.has(sortMode)) {
+    return;
   }
 
-  if (mobileTaskStatusFilter) {
-    mobileTaskStatusFilter.value = currentFilter;
-  }
+  desktopSortMode = sortMode;
+  syncDesktopSortUI();
+  applyFilter();
 }
 
 function updateMobileOverlayLock() {
@@ -970,8 +1160,8 @@ function createTaskElement(task) {
   article.setAttribute("role", "listitem");
   article.setAttribute("aria-grabbed", "false");
   article.dataset.taskId = task.id;
-  article.draggable = currentFilter === "all";
-  article.style.cursor = currentFilter === "all" ? "grab" : "";
+  article.draggable = canReorderTasksInCurrentView();
+  article.style.cursor = canReorderTasksInCurrentView() ? "grab" : "";
 
   const checkbox = document.createElement("input");
   checkbox.type = "checkbox";
@@ -1177,7 +1367,7 @@ function attachTaskEventHandlers(task, elements) {
   } = elements;
 
   article.addEventListener("dragstart", (event) => {
-    if (currentFilter !== "all") {
+    if (!canReorderTasksInCurrentView()) {
       event.preventDefault();
       return;
     }
@@ -1196,7 +1386,7 @@ function attachTaskEventHandlers(task, elements) {
   article.addEventListener("dragend", () => {
     article.setAttribute("aria-grabbed", "false");
     article.style.opacity = "";
-    article.style.cursor = currentFilter === "all" ? "grab" : "";
+    article.style.cursor = canReorderTasksInCurrentView() ? "grab" : "";
 
     if (draggedTaskId === task.id) {
       finalizeDraggedTaskPosition();
@@ -1350,12 +1540,12 @@ function submitNewTask({
   onSuccess?.();
 }
 
-function renderCategoryAsideFilters(container) {
+function renderCategoryAsideFilters(container, surface) {
   if (!container) {
     return;
   }
 
-  const closesMobileDrawerOnSelection = container === mobileCategoryFilterList;
+  const closesMobileDrawerOnSelection = surface === "mobile";
 
   const allCategoriesButton = container.querySelector(
     '[data-category-filter="all"]'
@@ -1363,7 +1553,7 @@ function renderCategoryAsideFilters(container) {
 
   if (allCategoriesButton) {
     allCategoriesButton.addEventListener("click", () => {
-      setCurrentCategoryFilter("all");
+      setViewCategoryFilter(surface, "all");
       if (closesMobileDrawerOnSelection) {
         setMobileFilterDrawerOpen(false);
       }
@@ -1382,7 +1572,7 @@ function renderCategoryAsideFilters(container) {
       "category-aside-link inline-flex w-full items-center rounded-lg px-2 py-1 text-slate-900 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:text-slate-100 dark:hover:bg-slate-700 dark:hover:text-slate-100";
     button.innerHTML = category.labelHtml;
     button.addEventListener("click", () => {
-      setCurrentCategoryFilter(category.value);
+      setViewCategoryFilter(surface, category.value);
       if (closesMobileDrawerOnSelection) {
         setMobileFilterDrawerOpen(false);
       }
@@ -1393,8 +1583,8 @@ function renderCategoryAsideFilters(container) {
   });
 }
 
-renderCategoryAsideFilters(categoryAsideList);
-renderCategoryAsideFilters(mobileCategoryFilterList);
+renderCategoryAsideFilters(categoryAsideList, "desktop");
+renderCategoryAsideFilters(mobileCategoryFilterList, "mobile");
 attachTaskListDragAndDropHandlers();
 
 const savedTheme = getStorageItem(STORAGE_KEYS.theme);
@@ -1419,10 +1609,15 @@ taskInput.addEventListener("input", () => setTaskFormError());
 createCategoryOptions(categoryInput, { includePlaceholder: true });
 createCategoryOptions(mobileCategoryInput, { includePlaceholder: true });
 updateCategoryInputAppearance();
-syncCategoryFilterUI();
-syncStatusFilterUI();
-syncPriorityFilterUI();
-syncSearchUI();
+syncCategoryFilterUI("desktop");
+syncCategoryFilterUI("mobile");
+syncStatusFilterUI("desktop");
+syncStatusFilterUI("mobile");
+syncPriorityFilterUI("desktop");
+syncPriorityFilterUI("mobile");
+syncSearchUI("desktop");
+syncSearchUI("mobile");
+syncDesktopSortUI();
 
 categoryInput.addEventListener("change", () => {
   setTaskFormError();
@@ -1432,29 +1627,33 @@ mobileTaskInput.addEventListener("input", () => setFormError(mobileTaskFormError
 mobileCategoryInput.addEventListener("change", () => setFormError(mobileTaskFormError));
 mobilePriorityInput.addEventListener("change", () => setFormError(mobileTaskFormError));
 taskPriorityFilter.addEventListener("change", () => {
-  setCurrentPriorityFilter(taskPriorityFilter.value);
+  setViewPriorityFilter("desktop", taskPriorityFilter.value);
 });
 taskStatusFilter.addEventListener("change", () => {
-  setCurrentFilter(taskStatusFilter.value);
+  setViewStatusFilter("desktop", taskStatusFilter.value);
 });
 priorityInput.addEventListener("change", () => {
   setTaskFormError();
   updatePriorityInputAppearance();
 });
 mobileTaskPriorityFilter.addEventListener("change", () => {
-  setCurrentPriorityFilter(mobileTaskPriorityFilter.value);
+  setViewPriorityFilter("mobile", mobileTaskPriorityFilter.value);
 });
 mobileTaskStatusFilter.addEventListener("change", () => {
-  setCurrentFilter(mobileTaskStatusFilter.value);
+  setViewStatusFilter("mobile", mobileTaskStatusFilter.value);
 });
 
 updatePriorityInputAppearance();
 
 taskSearchInput.addEventListener("input", () => {
-  setCurrentSearchTerm(normalizeTextValue(taskSearchInput.value).toLowerCase());
+  setViewSearchTerm(
+    "desktop",
+    normalizeTextValue(taskSearchInput.value).toLowerCase()
+  );
 });
 mobileTaskSearchInput.addEventListener("input", () => {
-  setCurrentSearchTerm(
+  setViewSearchTerm(
+    "mobile",
     normalizeTextValue(mobileTaskSearchInput.value).toLowerCase()
   );
 });
@@ -1483,8 +1682,49 @@ function completeAllTasks() {
   commitTasksChange();
 }
 
+desktopClearFiltersBtn?.addEventListener("click", () => clearDesktopFilters());
 completeAllBtn.addEventListener("click", () => completeAllTasks());
 mobileCompleteAllBtn.addEventListener("click", () => completeAllTasks());
+
+taskSortToggleBtn?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  setTaskSortMenuOpen(taskSortMenu?.classList.contains("hidden") ?? true);
+});
+
+taskSortMenu?.querySelectorAll("[data-sort-mode]").forEach((button) => {
+  button.addEventListener("click", () => {
+    setDesktopSortMode(button.dataset.sortMode);
+    setTaskSortMenuOpen(false);
+  });
+});
+
+document.addEventListener("click", (event) => {
+  if (!taskSortMenu || !taskSortToggleBtn) {
+    return;
+  }
+
+  const target = event.target;
+
+  if (
+    target instanceof Node &&
+    (taskSortMenu.contains(target) || taskSortToggleBtn.contains(target))
+  ) {
+    return;
+  }
+
+  setTaskSortMenuOpen(false);
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setTaskSortMenuOpen(false);
+  }
+});
+
+desktopBreakpoint.addEventListener("change", () => {
+  setTaskSortMenuOpen(false);
+  applyFilter();
+});
 
 mobileMenuToggle.addEventListener("click", () => setMobileFilterDrawerOpen(true));
 mobileFilterCloseBtn.addEventListener("click", () => setMobileFilterDrawerOpen(false));
