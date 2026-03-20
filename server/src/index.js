@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const {PORT} = require('./config/env');
 const taskRoutes = require('./routes/task.routes');
+const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
 
@@ -18,5 +19,8 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log('Servidor escuchando en http://localhost:${PORT}');
+    console.log(`Servidor escuchando en http://localhost:${PORT}`);
 });
+
+// Errores
+app.use(errorHandler);

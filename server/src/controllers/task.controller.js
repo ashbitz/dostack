@@ -30,12 +30,14 @@ const crearTarea = (req, res) => {
     res.status(201).json(nuevaTarea);
 };
 
-const eliminarTarea = (req, res) => {
-    const id = parseInt(req.params.id);
-
-    taskService.eliminarTarea(id);
-
-    res.status(204).send();
+const eliminarTarea = (req, res, next) => {
+    try{
+        const id = parseInt(req.params.id);
+        taskService.eliminarTarea(id);
+        res.status(204).send();
+    } catch (error) {
+        next(error);
+    }
 };
 
 module.exports = {
