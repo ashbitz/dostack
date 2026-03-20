@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config();
+const {PORT} = require('./config/env');
 
 const app = express();
 
@@ -12,9 +12,6 @@ app.use(express.json());
 app.get('/', (req, res) => {
     res.send('Servidor funcionando 🚀');
 });
-
-// Puerto desde .env
-const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
     console.log('Servidor escuchando en http://localhost:${PORT}');
