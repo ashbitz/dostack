@@ -6,36 +6,62 @@ const obtenerTodas = (req, res) => {
 };
 
 const crearTarea = (req, res) => {
-    const {titulo,prioridad} = req.body;
+    const {title, category, priority, completed} = req.body;
+
+    const validPriorities = ['alta', 'media', 'baja'];
+
+    const validCategories = [
+        'trabajo',
+        'hogar',
+        'estudio',
+        'ocio',
+        'personal',
+        'salud',
+        'otra',
+    ];
 
     // Validación
-    if (!titulo || typeof titulo !== 'string' || titulo.trim().length < 3) {
+    if (!title || typeof title !== 'string' || title.trim().length < 3) {
         return res.status(400).json({
-            error: 'El título es obligatorio y debe tener al menos 3 carácteres',
+            error: 'El título es obligatorio y debe tener al menos 3 caracteres',
         });
 
     }
 
-    if (typeof prioridad !== 'number' || prioridad < 1) {
+    if (!category || typeof category !== 'string' || !validCategories.includes(category.trim())) {
         return res.status(400).json({
-            error: 'La prioridad debe ser un número positivo',
+            error: 'La categoría no es válida',
         });
     }
+      
+    if (!validPriorities.includes(priority)) {
+        return res.status(400).json({
+            error: 'La prioridad debe ser alta, media o baja',
+        });
+    }
+
+    if (typeof completed !== 'boolean') {
+        return res.status(400).json({
+            error: 'El campo completed debe ser true o false',
+        });
+  }
 
     const nuevaTarea = taskService.crearTarea({
-        titulo,
-        prioridad,
+        title: title.trim(),
+        category: category.trim(),
+        priority,
+        completed,
     });
 
-    res.status(201).json(nuevaTarea);
+  res.status(201).json(nuevaTarea);
 };
 
 const eliminarTarea = (req, res, next) => {
-    try{
-        const id = parseInt(req.params.id);
+    try {
+        const id = req.params.id;
         taskService.eliminarTarea(id);
         res.status(204).send();
-    } catch (error) {
+    }   catch (error) {
         next(error);
     }
 };

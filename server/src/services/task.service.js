@@ -1,5 +1,5 @@
+const { randomUUID } = require('crypto');
 let tasks = [];
-let currentId = 1;
 
 const obtenerTodas = () => {
     return tasks;
@@ -7,8 +7,11 @@ const obtenerTodas = () => {
 
 const crearTarea = (data) => {
     const nuevaTarea = {
-        id: currentId++,
-        ...data,
+        id: randomUUID(),
+        title: data.title,
+        category: data.category,
+        priority: data.priority,
+        completed: data.completed,
     };
 
     tasks.push(nuevaTarea);
