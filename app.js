@@ -33,13 +33,41 @@ const FIELD_LIMITS = {
   max: 20
 };
 const CATEGORY_OPTIONS = [
-  { value: "\u{1F4BC} Trabajo", labelHtml: "&#128188; Trabajo" },
-  { value: "\u{1F3E0} Hogar", labelHtml: "&#127968; Hogar" },
-  { value: "\u{1F4D6} Estudio", labelHtml: "&#128214; Estudio" },
-  { value: "\u2708\uFE0F Ocio", labelHtml: "&#9992;&#65039; Ocio" },
-  { value: "\u{1F464} Personal", labelHtml: "&#128100; Personal" },
-  { value: "\u{1F691} Salud", labelHtml: "&#128657; Salud" },
-  { value: "\u{1F31F} Otra", labelHtml: "&#127775; Otra" }
+  {
+    value: "trabajo",
+    labelText: "💼 Trabajo",
+    labelHtml: "&#128188; Trabajo"
+  },
+  {
+    value: "hogar",
+    labelText: "🏠 Hogar",
+    labelHtml: "&#127968; Hogar"
+  },
+  {
+    value: "estudio",
+    labelText: "📖 Estudio",
+    labelHtml: "&#128214; Estudio"
+  },
+  {
+    value: "ocio",
+    labelText: "✈️ Ocio",
+    labelHtml: "&#9992;&#65039; Ocio"
+  },
+  {
+    value: "personal",
+    labelText: "👤 Personal",
+    labelHtml: "&#128100; Personal"
+  },
+  {
+    value: "salud",
+    labelText: "🚑 Salud",
+    labelHtml: "&#128657; Salud"
+  },
+  {
+    value: "otra",
+    labelText: "🌟 Otra",
+    labelHtml: "&#127775; Otra"
+  }
 ];
 const VALID_CATEGORIES = new Set(
   CATEGORY_OPTIONS.map((category) => category.value)
@@ -229,6 +257,16 @@ function createTaskId() {
   return `task-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function getCategoryOption(value) {
+  const normalizedValue = normalizeTextValue(value).toLowerCase();
+
+  return (
+    CATEGORY_OPTIONS.find(
+      (category) => category.value.toLowerCase() === normalizedValue
+    ) ?? null
+  );
+}
+
 function normalizeTextValue(value) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -240,15 +278,22 @@ function normalizeCategoryValue(value) {
     return "";
   }
 
-  const exactMatch = CATEGORY_OPTIONS.find(
+  const exactValueMatch = CATEGORY_OPTIONS.find(
     (category) => category.value.toLowerCase() === normalizedValue.toLowerCase()
   );
-  if (exactMatch) {
-    return exactMatch.value;
+  if (exactValueMatch) {
+    return exactValueMatch.value;
+  }
+
+  const exactLabelMatch = CATEGORY_OPTIONS.find(
+    (category) => category.labelText.toLowerCase() === normalizedValue.toLowerCase()
+  );
+  if (exactLabelMatch) {
+    return exactLabelMatch.value;
   }
 
   const textOnlyMatch = CATEGORY_OPTIONS.find((category) => {
-    const textOnlyValue = category.value
+    const textOnlyValue = category.labelText
       .replace(/^[^\p{L}\p{N}]+/u, "")
       .trim()
       .toLowerCase();
@@ -1190,7 +1235,8 @@ function updateCheckboxAppearance(checkbox) {
 
 function updateTaskContent(task, elements) {
   elements.title.textContent = task.title;
-  elements.category.textContent = task.category;
+  elements.category.textContent =
+  getCategoryOption(task.category)?.labelText ?? task.category;
   elements.badge.className = `${TASK_CLASS_NAMES.badge} ${getPriorityClasses(task.priority)}`;
   elements.badge.textContent = formatPriorityLabel(task.priority);
   elements.checkbox.setAttribute(
@@ -1307,7 +1353,8 @@ function createTaskElement(task) {
   categoryLine.className = TASK_CLASS_NAMES.textLine;
 
   const category = document.createElement("span");
-  category.textContent = task.category;
+  category.textContent =
+  getCategoryOption(task.category)?.labelText ?? task.category;
 
   const editCategoryInput = document.createElement("select");
   editCategoryInput.className = TASK_CLASS_NAMES.editCategoryInput;

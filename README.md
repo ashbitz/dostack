@@ -452,10 +452,4 @@ Estas mejoras no están implementadas actualmente, pero encajan bien con la base
 
 ## Autor
 
-Primera versión de documentación para el proyecto DoStack.
-
-Si vas a publicar el repositorio, puedes completar esta sección con:
-
-- Nombre o alias
-- Perfil de GitHub
-- Portfolio o sitio personal
+Ashbitz
