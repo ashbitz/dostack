@@ -28,8 +28,37 @@ const eliminarTarea = (id) => {
     tasks.splice(index, 1);
 };
 
+const actualizarTarea = (id, data) => {
+    const task = tasks.find((task) => task.id === id);
+
+    if (!task) {
+        throw new Error('NOT_FOUND');
+    }
+
+    task.title = data.title;
+    task.category = data.category;
+    task.priority = data.priority;
+    task.completed = data.completed;
+
+    return task;
+};
+
+const actualizarCompleted = (id, completed) => {
+    const task = tasks.find((task) => task.id === id);
+
+    if (!task) {
+        throw new Error('NOT_FOUND');
+    }
+
+    task.completed = completed;
+
+    return task;
+};
+
 module.exports = {
     obtenerTodas,
     crearTarea,
     eliminarTarea,
+    actualizarTarea,
+    actualizarCompleted,
 };
