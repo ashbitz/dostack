@@ -450,26 +450,21 @@ function loadTasks() {
 }
 
 async function loadTasksFromAPI() {
-  try {
-    const response = await fetch(API_BASE_URL);
+  const response = await fetch(API_BASE_URL);
 
-    if (!response.ok) {
-      throw new Error(`Error HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (!Array.isArray(data)) {
-      throw new Error("La respuesta de la API no es una lista de tareas.");
-    }
-
-    return data
-      .map(normalizeTask)
-      .filter((task) => task !== null);
-  } catch (error) {
-    console.error("No se pudieron cargar las tareas desde la API:", error);
-    return [];
+  if (!response.ok) {
+    throw new Error(`Error HTTP ${response.status}`);
   }
+
+  const data = await response.json();
+
+  if (!Array.isArray(data)) {
+    throw new Error("Error del servidor al mostrar las tareas.");
+  }
+
+  return data
+    .map(normalizeTask)
+    .filter((task) => task !== null);
 }
 
 async function createTaskInAPI(taskData) {
@@ -1917,11 +1912,17 @@ themeToggle.addEventListener("click", () => {
 async function initializeTasks() {
   setTaskFeedback("Cargando tareas...");
 
-  tasks = await loadTasksFromAPI();
-  updateTaskStatistics();
-  renderStoredTasks();
-
-  setTaskFeedback("");
+  try {
+    tasks = await loadTasksFromAPI();
+    updateTaskStatistics();
+    renderStoredTasks();
+    setTaskFeedback("");
+  } catch (error) {
+    console.error("No se pudieron cargar las tareas desde el servidor:", error);
+    tasks = [];
+    updateTaskStatistics();
+    setTaskFeedback("Error del servidor al cargar las tareas.");
+  }
 }
 
 initializeTasks();
