@@ -1,6 +1,5 @@
 const STORAGE_KEYS = {
   theme: "theme",
-  tasks: "tasks"
 };
 
 const API_BASE_URL = "http://localhost:3000/api/v1/tasks";
@@ -244,14 +243,6 @@ function setStorageItem(key, value) {
   }
 }
 
-function removeStorageItem(key) {
-  try {
-    localStorage.removeItem(key);
-  } catch (error) {
-    console.error(`No se pudo eliminar "${key}" de localStorage:`, error);
-  }
-}
-
 function createTaskId() {
   if (globalThis.crypto?.randomUUID) {
     return globalThis.crypto.randomUUID();
@@ -359,94 +350,6 @@ function normalizeTask(rawTask) {
     priority: VALID_PRIORITIES.has(rawPriority) ? rawPriority : "alta",
     completed: Boolean(rawTask.completed)
   };
-}
-
-function shouldPersistNormalizedTasks(parsedTasks, normalizedTasks) {
-  if (parsedTasks.length !== normalizedTasks.length) {
-    return true;
-  }
-
-  return parsedTasks.some((rawTask, index) => {
-    const normalizedTask = normalizedTasks[index];
-    const rawId =
-      rawTask && typeof rawTask === "object" && typeof rawTask.id === "string"
-        ? rawTask.id
-        : "";
-    const rawPriority =
-      rawTask && typeof rawTask === "object" && typeof rawTask.priority === "string"
-        ? rawTask.priority.toLowerCase()
-        : "";
-
-    return (
-      rawId !== normalizedTask.id ||
-      rawPriority !== normalizedTask.priority ||
-      Boolean(rawTask?.completed) !== normalizedTask.completed ||
-      rawTask?.title !== normalizedTask.title ||
-      rawTask?.category !== normalizedTask.category
-    );
-  });
-}
-
-/**
- * Serializa la lista actual de tareas y la guarda en `localStorage`.
- *
- * @param {{ notifyOnError?: boolean }} [options={}] Opciones de guardado.
- * @param {boolean} [options.notifyOnError=true] Indica si se debe mostrar una alerta cuando falle el guardado.
- * @returns {void}
- */
-function saveTasks({ notifyOnError = true } = {}) {
-  try {
-    const serializedTasks = JSON.stringify(tasks);
-    const saved = setStorageItem(STORAGE_KEYS.tasks, serializedTasks);
-
-    if (!saved && notifyOnError) {
-      alert(
-        "No se pudo guardar la tarea. Puede que el almacenamiento local este desactivado o lleno."
-      );
-    }
-  } catch (error) {
-    console.error("Error al serializar las tareas:", error);
-    if (notifyOnError) {
-      alert("No se pudo preparar la tarea para guardarla.");
-    }
-  }
-}
-
-/**
- * Recupera las tareas guardadas desde `localStorage`, las normaliza y elimina datos invalidos si es necesario.
- *
- * @returns {{ id: string, title: string, category: string, priority: string, completed: boolean }[]} Lista de tareas restauradas.
- */
-function loadTasks() {
-  const savedTasks = getStorageItem(STORAGE_KEYS.tasks);
-
-  if (!savedTasks) {
-    return [];
-  }
-
-  try {
-    const parsedTasks = JSON.parse(savedTasks);
-
-    if (!Array.isArray(parsedTasks)) {
-      throw new Error("El contenido guardado no es una lista de tareas.");
-    }
-
-    const normalizedTasks = parsedTasks
-      .map(normalizeTask)
-      .filter((task) => task !== null);
-
-    if (shouldPersistNormalizedTasks(parsedTasks, normalizedTasks)) {
-      console.warn("Se normalizaron tareas guardadas al restaurar la sesion.");
-      tasks = normalizedTasks;
-      saveTasks({ notifyOnError: false });
-    }
-
-    return normalizedTasks;
-  } catch (error) {
-    console.error("No se pudieron recuperar las tareas guardadas:", error);
-    removeStorageItem(STORAGE_KEYS.tasks);
-    return [];
-  }
 }
 
 async function loadTasksFromAPI() {
@@ -961,8 +864,6 @@ function syncTaskOrderWithDOM() {
     .reverse()
     .map((taskId) => taskById.get(taskId))
     .filter((task) => task !== undefined);
-
-  saveTasks();
 }
 
 /**
@@ -1593,7 +1494,6 @@ function syncTaskCompletionState(task, elements) {
 }
 
 function commitTasksChange() {
-  saveTasks();
   updateTaskStatistics();
   applyFilter();
 }
