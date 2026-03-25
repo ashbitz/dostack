@@ -3,6 +3,8 @@ const STORAGE_KEYS = {
   tasks: "tasks"
 };
 
+const API_BASE_URL = "http://localhost:3000/api/v1/tasks";
+
 const VALID_PRIORITIES = new Set(["alta", "media", "baja"]);
 const FILTER_VALUES = new Set(["all", "open", "closed"]);
 const SORT_MODE_VALUES = new Set([
@@ -205,6 +207,7 @@ const mobileCategoryInput = document.querySelector("#mobile-category-input");
 const mobilePriorityInput = document.querySelector("#mobile-priority-input");
 const mobileTaskFormError = document.querySelector("#mobile-task-form-error");
 const taskFormError = document.querySelector("#task-form-error");
+const taskFeedback = document.querySelector("#task-feedback");
 const taskList = document.querySelector("#task-list");
 const themeToggle = document.querySelector("#theme-toggle");
 const desktopBreakpoint = window.matchMedia("(min-width: 768px)");
@@ -444,6 +447,97 @@ function loadTasks() {
     removeStorageItem(STORAGE_KEYS.tasks);
     return [];
   }
+}
+
+async function loadTasksFromAPI() {
+  try {
+    const response = await fetch(API_BASE_URL);
+
+    if (!response.ok) {
+      throw new Error(`Error HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!Array.isArray(data)) {
+      throw new Error("La respuesta de la API no es una lista de tareas.");
+    }
+
+    return data
+      .map(normalizeTask)
+      .filter((task) => task !== null);
+  } catch (error) {
+    console.error("No se pudieron cargar las tareas desde la API:", error);
+    return [];
+  }
+}
+
+async function createTaskInAPI(taskData) {
+  const response = await fetch(API_BASE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(taskData),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error HTTP ${response.status}`);
+  }
+
+  const createdTask = await response.json();
+  return normalizeTask(createdTask);
+}
+
+async function updateTaskCompletedInAPI(taskId, completed) {
+  const response = await fetch(`${API_BASE_URL}/${taskId}/completed`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ completed }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error HTTP ${response.status}`);
+  }
+
+  const updatedTask = await response.json();
+  return normalizeTask(updatedTask);
+}
+
+async function deleteTaskInAPI(taskId) {
+  const response = await fetch(`${API_BASE_URL}/${taskId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error HTTP ${response.status}`);
+  }
+
+  return true;
+}
+
+async function updateTaskInAPI(task) {
+  const response = await fetch(`${API_BASE_URL}/${task.id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      title: task.title,
+      category: task.category,
+      priority: task.priority,
+      completed: task.completed,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Error HTTP ${response.status}`);
+  }
+
+  const updatedTask = await response.json();
+  return normalizeTask(updatedTask);
 }
 
 function updateThemeButton(isDark) {
@@ -993,6 +1087,15 @@ function setFormError(element, message = "") {
 
   element.textContent = message;
   element.classList.toggle("hidden", !message);
+}
+
+function setTaskFeedback(message = "") {
+  if (!taskFeedback) {
+    return;
+  }
+
+  taskFeedback.textContent = message;
+  taskFeedback.classList.toggle("hidden", !message);
 }
 
 function setSortMenuOpen(toggleButton, menu, isOpen) {
@@ -1548,11 +1651,31 @@ function attachTaskEventHandlers(task, elements) {
     }
   });
 
-  checkbox.addEventListener("change", () => {
-    task.completed = checkbox.checked;
+  checkbox.addEventListener("change", async () => {
+  const nextCompletedValue = checkbox.checked;
+
+  try {
+    const updatedTask = await updateTaskCompletedInAPI(
+      task.id,
+      nextCompletedValue
+    );
+
+    if (!updatedTask) {
+      checkbox.checked = task.completed;
+      updateCheckboxAppearance(checkbox);
+      return;
+    }
+
+    task.completed = updatedTask.completed;
     syncTaskCompletionState(task, elements);
-    commitTasksChange();
-  });
+    updateTaskStatistics();
+    applyFilter();
+  } catch (error) {
+    console.error("No se pudo actualizar el estado de la tarea:", error);
+    checkbox.checked = task.completed;
+    updateCheckboxAppearance(checkbox);
+  }
+});
 
   editBtn.addEventListener("click", () => {
     const isEditing = article.dataset.editing === "true";
@@ -1578,35 +1701,63 @@ function attachTaskEventHandlers(task, elements) {
   editCategoryInput.addEventListener("change", () => setTaskEditError(elements));
   editPriorityInput.addEventListener("change", () => setTaskEditError(elements));
 
-  editForm.addEventListener("submit", (event) => {
-    event.preventDefault();
+  editForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-    const validation = validateTaskInput(
-      editTitleInput.value,
-      editCategoryInput.value,
-      editPriorityInput.value,
-      task.id
-    );
+  const validation = validateTaskInput(
+    editTitleInput.value,
+    editCategoryInput.value,
+    editPriorityInput.value,
+    task.id
+  );
 
-    if (!validation.isValid) {
-      setTaskEditError(elements, validation.error);
+  if (!validation.isValid) {
+    setTaskEditError(elements, validation.error);
+    return;
+  }
+
+  try {
+    const updatedTask = await updateTaskInAPI({
+      id: task.id,
+      title: validation.title,
+      category: validation.category,
+      priority: validation.priority,
+      completed: task.completed,
+    });
+
+    if (!updatedTask) {
+      setTaskEditError(elements, "No se pudo guardar la edición en el servidor.");
       return;
     }
 
-    task.title = validation.title;
-    task.category = validation.category;
-    task.priority = validation.priority;
+    task.title = updatedTask.title;
+    task.category = updatedTask.category;
+    task.priority = updatedTask.priority;
+    task.completed = updatedTask.completed;
+
     updateTaskContent(task, elements);
     updateTaskStyle(task, elements);
     setTaskEditMode(task, elements, false);
-    commitTasksChange();
-  });
+    updateTaskStatistics();
+    applyFilter();
+  } catch (error) {
+    console.error("No se pudo editar la tarea:", error);
+    setTaskEditError(elements, "No se pudo guardar la edición en el servidor.");
+  }
+});
 
-  deleteBtn.addEventListener("click", () => {
-    article.remove();
-    taskElements.delete(task);
-    tasks = tasks.filter((storedTask) => storedTask.id !== task.id);
-    commitTasksChange();
+ deleteBtn.addEventListener("click", async () => {
+    try {
+      await deleteTaskInAPI(task.id);
+
+      article.remove();
+      taskElements.delete(task);
+      tasks = tasks.filter((storedTask) => storedTask.id !== task.id);
+      updateTaskStatistics();
+      applyFilter();
+    } catch (error) {
+      console.error("No se pudo eliminar la tarea:", error);
+    }
   });
 }
 
@@ -1653,7 +1804,7 @@ function renderStoredTasks() {
   applyFilter();
 }
 
-function submitNewTask({
+async function submitNewTask({
   titleField,
   categoryField,
   priorityField,
@@ -1676,23 +1827,29 @@ function submitNewTask({
   categoryField.value = validation.category;
   priorityField.value = validation.priority;
 
-  const newTask = normalizeTask({
-    id: createTaskId(),
-    title: validation.title,
-    category: validation.category,
-    priority: validation.priority,
-    completed: false
-  });
+  try{
 
-  if (!newTask) {
-    return;
+    const newTask = await createTaskInAPI({
+      title: validation.title,
+      category: validation.category,
+      priority: validation.priority,
+      completed: false
+    });
+
+    if (!newTask) {
+      setFormError(errorField, "No se pudo guardar la tarea en el servidor.");
+      return;
+    }
+
+    tasks.push(newTask);
+    updateTaskStatistics();
+    addTaskToDOM(newTask);
+    onSuccess?.();
+
+  } catch (error) {
+    console.error("No se pudo crear la tarea:", error);
+    setFormError(errorField, "No se pudo guardar la tarea en el servidor.");
   }
-
-  tasks.push(newTask);
-  saveTasks();
-  updateTaskStatistics();
-  addTaskToDOM(newTask);
-  onSuccess?.();
 }
 
 function renderCategoryAsideFilters(container, surface) {
@@ -1757,9 +1914,17 @@ themeToggle.addEventListener("click", () => {
   updateThemeButton(isDark);
 });
 
-tasks = loadTasks();
-updateTaskStatistics();
-renderStoredTasks();
+async function initializeTasks() {
+  setTaskFeedback("Cargando tareas...");
+
+  tasks = await loadTasksFromAPI();
+  updateTaskStatistics();
+  renderStoredTasks();
+
+  setTaskFeedback("");
+}
+
+initializeTasks();
 
 taskInput.addEventListener("input", () => setTaskFormError());
 createCategoryOptions(categoryInput, { includePlaceholder: true });
