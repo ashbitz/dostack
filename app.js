@@ -459,7 +459,7 @@ async function loadTasksFromAPI() {
   const data = await response.json();
 
   if (!Array.isArray(data)) {
-    throw new Error("Error del servidor al mostrar las tareas.");
+    throw new Error("Formato de respuesta inválido.");
   }
 
   return data
