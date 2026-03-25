@@ -1881,28 +1881,34 @@ mobileTaskSearchInput.addEventListener("input", () => {
   );
 });
 
-function completeAllTasks() {
-  let hasChanges = false;
+async function completeAllTasks() {
+  const tasksToUpdate = tasks.filter((task) => !task.completed);
 
-  tasks.forEach((task) => {
-    if (task.completed) {
-      return;
-    }
-
-    task.completed = true;
-    hasChanges = true;
-
-    const elements = taskElements.get(task);
-    if (elements) {
-      syncTaskCompletionState(task, elements);
-    }
-  });
-
-  if (!hasChanges) {
+  if (tasksToUpdate.length === 0) {
     return;
   }
 
-  commitTasksChange();
+  try {
+    for (const task of tasksToUpdate) {
+      const updatedTask = await updateTaskCompletedInAPI(task.id, true);
+
+      if (!updatedTask) {
+        continue;
+      }
+
+      task.completed = updatedTask.completed;
+
+      const elements = taskElements.get(task);
+      if (elements) {
+        syncTaskCompletionState(task, elements);
+      }
+    }
+
+    updateTaskStatistics();
+    applyFilter();
+  } catch (error) {
+    console.error("No se pudieron completar todas las tareas:", error);
+  }
 }
 
 desktopClearFiltersBtn?.addEventListener("click", () => clearDesktopFilters());
