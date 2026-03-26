@@ -352,6 +352,7 @@ function normalizeTask(rawTask) {
   };
 }
 
+// API: GET /tasks → obtener todas las tareas
 async function loadTasksFromAPI() {
   const response = await fetch(API_BASE_URL);
 
@@ -370,6 +371,7 @@ async function loadTasksFromAPI() {
     .filter((task) => task !== null);
 }
 
+// API: POST /tasks → crear nueva tarea
 async function createTaskInAPI(taskData) {
   const response = await fetch(API_BASE_URL, {
     method: "POST",
@@ -387,6 +389,7 @@ async function createTaskInAPI(taskData) {
   return normalizeTask(createdTask);
 }
 
+// API: PATCH /tasks/:id/completed → actualizar estado completed
 async function updateTaskCompletedInAPI(taskId, completed) {
   const response = await fetch(`${API_BASE_URL}/${taskId}/completed`, {
     method: "PATCH",
@@ -404,6 +407,7 @@ async function updateTaskCompletedInAPI(taskId, completed) {
   return normalizeTask(updatedTask);
 }
 
+// API: DELETE /tasks/:id → eliminar tarea
 async function deleteTaskInAPI(taskId) {
   const response = await fetch(`${API_BASE_URL}/${taskId}`, {
     method: "DELETE",
@@ -416,6 +420,7 @@ async function deleteTaskInAPI(taskId) {
   return true;
 }
 
+// API: PUT /tasks/:id → actualizar tarea completa
 async function updateTaskInAPI(task) {
   const response = await fetch(`${API_BASE_URL}/${task.id}`, {
     method: "PUT",
@@ -873,7 +878,7 @@ function syncTaskOrderWithDOM() {
  * Cuando termina el arrastre, esta funcion mueve el `<article>` correspondiente
  * a la tarea activa hasta la posicion actual del `dragIndicator`. Despues
  * elimina dicho indicador y reconstruye el array `tasks` segun el orden real
- * del DOM para que la persistencia y los futuros renders respeten ese orden.
+ * del DOM para que el estado actual y los futuros renders respeten ese orden.
  *
  * @returns {void}
  */
@@ -911,7 +916,7 @@ function finalizeDraggedTaskPosition() {
  *    muestra el punto exacto de insercion.
  * 4. Al soltar la tarea (`drop`) o al finalizar el arrastre, se llama a
  *    `finalizeDraggedTaskPosition()` para mover el nodo, limpiar el indicador y
- *    persistir el nuevo orden.
+ *    sincronizar el nuevo orden con el estado actual.
  *
  * La reordenacion solo se mantiene disponible cuando la vista activa esta sin
  * filtros y el modo de ordenacion actual es `manual`.
@@ -1881,6 +1886,7 @@ mobileTaskSearchInput.addEventListener("input", () => {
   );
 });
 
+// API: PATCH multiple → completar todas las tareas
 async function completeAllTasks() {
   const tasksToUpdate = tasks.filter((task) => !task.completed);
 
