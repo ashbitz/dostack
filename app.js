@@ -2,7 +2,10 @@ const STORAGE_KEYS = {
   theme: "theme",
 };
 
-const API_BASE_URL = "http://localhost:3000/api/v1/tasks";
+const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3000/api/v1/tasks"
+    : "https://dostack-api.vercel.app/api/v1/tasks";
 
 const VALID_PRIORITIES = new Set(["alta", "media", "baja"]);
 const FILTER_VALUES = new Set(["all", "open", "closed"]);
